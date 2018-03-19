@@ -1,6 +1,31 @@
 #include "graph.hpp"
 
 
+Graph::Graph(size_t n) :
+    nb_vertices(n)
+{}
+
+std::vector<std::vector<size_t>> Graph::asAdjacencyList() const
+{
+    std::vector<std::vector<size_t>> result(nb_vertices);
+
+    for (const Edge& edge: edges) {
+        result[edge.first].push_back(edge.second);
+        result[edge.second].push_back(edge.first);
+    }
+
+    // Remove redonduncy
+    for (size_t i = 0 ; i < nb_vertices ; i++) {
+        std::sort(result[i].begin(), result[i].end());
+        result[i].erase(
+            std::unique(result[i].begin(), result[i].end()),
+            result[i].end()
+        );
+    }
+
+    return result;
+}
+
 Graph complete_graph(size_t n)
 {
     Graph graph(n);
@@ -15,7 +40,7 @@ Graph complete_graph(size_t n)
 Graph random_graph(size_t n, size_t m)
 {
     std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(0, n);
+    std::uniform_int_distribution<int> distribution(0, n-1);
     auto rand_edge = std::bind(distribution, generator);
 
     Graph graph(n);

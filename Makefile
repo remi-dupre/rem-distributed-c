@@ -1,5 +1,5 @@
 # Names of the programs we want to compile
-TARGETS = compare spaning_forest generate
+TARGETS = compare spaning_forest generate infos
 
 # C++ compiler
 CXX = g++

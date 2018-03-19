@@ -25,3 +25,33 @@ bool same_components(const Graph& g1, const Graph& g2)
 
     return true;
 }
+
+bool is_tree(const Graph& graph)
+{
+    return graph.nb_vertices - 1 == graph.edges.size() && is_forest(graph);
+}
+
+bool is_forest(const Graph& graph)
+{
+    auto graph_adj = graph.asAdjacencyList();
+    std::vector<bool> visited(graph.nb_vertices, false);
+
+    std::function<bool(size_t, size_t)> run = [&graph_adj, &visited, &run] (size_t v, size_t p) {
+        if (visited[v])
+            return false;
+
+        visited[v] = true;
+        for (size_t t: graph_adj[v]) {
+            if (t != p && !run(t, v))
+                return false;
+        }
+        return true;
+    };
+
+    for (size_t i = 0 ; i < graph.nb_vertices ; i++) {
+        if (!visited[i] && !run(i, -1))
+            return false;
+    }
+
+    return true;
+}

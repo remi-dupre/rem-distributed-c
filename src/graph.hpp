@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <iostream>
@@ -27,9 +28,12 @@ struct Graph {
     /**
      * Create a graph containing n vertices and no edges.
      */
-    Graph(size_t n = 0) :
-        nb_vertices(n)
-    {}
+    Graph(size_t n = 0);
+
+    /**
+     * Return the adjacency list of this graph.
+     */
+    std::vector<std::vector<size_t>> asAdjacencyList() const;
 };
 
 /**
