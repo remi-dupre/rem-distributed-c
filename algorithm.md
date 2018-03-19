@@ -22,7 +22,6 @@ This is a request sent to a processor, asking it to run on its local tree, try t
    When can easily check this before sending a request and replace r_y with p(r_y) if necessary.
    Thus, we won't need to send p(r_y), but owner(r_y) will have to set it at retreival.
 
-
 ### Algorithm
 ```python
 # We can localy move up as much as we want because:
@@ -32,9 +31,8 @@ r_x <- local_root(r_x)
 if owner(r_x) == owner(r_y):
     r_y <- local_root(r_y)
 
-# Basic cases, as we did the classical find operation, they could be unchecked
-if r_x == r_y or p(r_x) == p(r_y):
-    p(r_x) = max(p(r_x), p(r_y))
+# Basic cases, as we did the classical find operation, they could be unchecked and avoid a communication
+if p(r_x) == p(r_y):
     return
 if p(r_x) == r_y:
     p(r_x) <- p(r_y)
