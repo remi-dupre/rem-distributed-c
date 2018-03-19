@@ -1,0 +1,10 @@
+# Compilation files
+build
+
+# Test outputs
+outputs
+
+# Compiled files
+compare
+generate
+spaning_forest

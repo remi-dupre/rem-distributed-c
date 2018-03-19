@@ -7,8 +7,8 @@ This is a request sent to a processor, asking it to run on its local tree, try t
 
 ### Context
  - **process**: current process id
- - **p(vertex)**
- - **owner(vertex)**
+ - **p(vertex)**: points to the parent of *vertex* in the disjoint-set structure
+ - **owner(vertex)**: id of the process that was assigned this vertex
  - **local_root(vertex)**: classical find operation, with classical compression
 
 ### Inputs: 'task (r_x, r_y)'
@@ -19,7 +19,7 @@ This is a request sent to a processor, asking it to run on its local tree, try t
 ### Assumptions
  - (a1) *owner(r_x) = process*
  - (a2) *owner(r_y) != process ==> owner(p(r_y)) != process*
-   When can easily check this before sending a request and replace r_y with p(r_y) if necessary.
+   We can easily check this before sending a request and replace r_y with p(r_y) if necessary.
    Thus, we won't need to send p(r_y), but owner(r_y) will have to set it at retreival.
 
 ### Algorithm
