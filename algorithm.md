@@ -52,8 +52,10 @@ if p(r_x) < p(r_y):
         send the task (z, r_y) to owner(z)
 else:
     if r_y == p(r_y):
-        ask owner(r_y) to set p(r_y) <- p(r_x)
-        mark (x, y)
+        # ask owner(r_y) to set p(r_y) <- p(r_x)
+        # mark (x, y)
+        #  ... wouldn't be enough: p(r_y) could have been updated
+        send the task (r_y, r_x) to owner(r_y)
     else:
         z <- p(r_y) # necessary if owner[r_y] == process
         ask owner(r_y) to set p(r_y) <- p(r_x)
