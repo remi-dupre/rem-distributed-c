@@ -16,6 +16,9 @@ This is a request sent to a processor, asking it to run on its local tree, try t
  - **p(r_y)**: if *r_y* is not owned by this process, this is the only way to get its parent. It gives a speedup to be able to directly jump to next process but this is not necessary. If *p(r_y)* is not known, it can be set to *r_y*, the algorithm will then ask to its owner to conclude on anything.
  - **(x, y)**: the edges that initialy started this request
 
+It is important that theses task are communicated as a queue among processes, so that it two requests reach the same vertex, they are always executed in the same order.
+If they do not propagate to the same process, this won't be a problem since one will be one communication phase ahead to the other.
+
 ### Assumptions
  - (a1) *owner(r_x) = process*
  - (a2) *owner(r_y) != process ==> owner(p(r_y)) != process*
