@@ -24,10 +24,9 @@ This is a request sent to a processor, asking it to run on its local tree, try t
 
 ### Algorithm
 ```python
-# We can localy move up as much as we want because:
+# Localy moves up
 r_x <- local_root(r_x)
 
-# Here, we can localy work on this process as much as possible
 if owner(r_x) == owner(r_y):
     r_y <- local_root(r_y)
 
@@ -72,3 +71,11 @@ Ask to take controll of a find-union operation.
  - **r_y**: an arbitrary vertex
  - **p(r_y)**: if r_y is not owned by current process, its parent
 Thus *20 bytes* of data to send if 32 bits integers are used.
+
+Toward a proof
+--------------
+It seems that a correctness proof of this algorithm can easily be done by checking theses two rules at any step of the algorithm:
+ 1. The union of process's forests is a forest.
+ 2. The union of process's forests union the set of edges we are propagating has the same accessibility relation as the original graph.
+
+Note that when there is no more edges to check, theses two rules are exactly checking that the union of process's forests is a spaning forest of the original graph.
