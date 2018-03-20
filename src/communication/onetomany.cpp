@@ -1,0 +1,75 @@
+#include "onetomany.hpp"
+
+
+OneToMany::OneToMany(int source, MPI_Comm communicator) :
+    source(source),
+    communicator(communicator)
+{}
+
+void OneToMany::send(const std::vector<std::string>& data)
+{
+    int process;
+    MPI_Comm_rank(MPI_COMM_WORLD, &process);
+    assert(process == source);
+
+    // Calculate size informations
+    std::vector<int> displs;
+    std::vector<int> sendcount;
+    std::string sendbuf;
+
+    int cumul_size = 0;
+    for (const std::string& proc_buff : data) {
+        displs.push_back(cumul_size);
+        sendcount.push_back(proc_buff.size());
+        sendbuf += proc_buff;
+
+        cumul_size += proc_buff.size();
+    }
+
+    // Send size informations
+    int my_size; // pretty pointless var
+    MPI_Scatter(
+        sendcount.data(), 1, MPI_INT,
+        &my_size, 1, MPI_INT,
+        source, communicator
+    );
+
+    // Send datas
+    char* recvbuf = (char*) malloc(sendcount[source]);
+    MPI_Scatterv(
+        sendbuf.data(), sendcount.data(), displs.data(), MPI_CHAR,
+        recvbuf, my_size, MPI_CHAR,
+        source, communicator
+    );
+
+    source_buffer = std::string(recvbuf, my_size);
+    delete recvbuf;
+}
+
+std::string OneToMany::receive()
+{
+    int process;
+    MPI_Comm_rank(MPI_COMM_WORLD, &process);
+
+    if (process == source) {
+        std::string ret = std::move(source_buffer);
+        return ret;
+    }
+
+    // Get size informations
+    int my_size;
+    MPI_Scatter(
+        nullptr, 1, MPI_INT,
+        &my_size, 1, MPI_INT,
+        source, communicator
+    );
+
+    // Get datas
+    char* recvbuf = (char*) malloc(my_size);
+    MPI_Scatterv(
+        nullptr, nullptr, nullptr, MPI_CHAR,
+        recvbuf, my_size, MPI_CHAR,
+        source, communicator
+    );
+    return std::string(recvbuf, my_size);
+}
