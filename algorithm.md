@@ -59,3 +59,20 @@ else:
         ask owner(r_y) to set p(r_y) <- p(r_x)
         send the task (z, r_x) to owner(z)
 ```
+
+### Messages
+During the distributed phase, process can exchange two kind of messages.
+
+#### Update
+Ask to change a parent, if it offers an enhancement.
+ - **node**: the node that needs a parental update
+ - **val**: the id of the node's new parent
+Thus *8 bytes* of data to send if 32 bits integers are used.
+
+#### Task
+Ask to take controll of a find-union operation.
+ - **(x, y)**: the original edge we want to insert
+ - **r_x**: a local vertex
+ - **r_y**: an arbitrary vertex
+ - **p(r_y)**: if r_y is not owned by current process, its parent
+Thus *20 bytes* of data to send if 32 bits integers are used.
