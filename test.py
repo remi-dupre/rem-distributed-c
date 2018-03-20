@@ -1,6 +1,13 @@
+#!/usr/bin/python3
 """
-Simulate the distributed algorithm.
+Sequentialy simulate the distributed algorithm.
+Usage:
+    `python3 test.py`       ouputs a spaning tree of input graph
+    `python3 test.py debug` give some general informations about the calculation
 """
+from sys import argv
+
+
 nprocs = 4
 
 # Read number of nodes and edges from stdin
@@ -124,24 +131,32 @@ def distributed_REM(process, r_x, r_y, x, y, pr_y=None):
             p_process[owner[r_y]][r_y] = p[r_x] # COM
             distributed_REM(owner[z], z, r_x, x, y, p[r_x]) # COM
 
-# Simulate the distributed calls
 for process in range(nprocs):
+    # Simulate the distributed calls
     for x, y in surounding_edges[process]:
         x -= n  # This is a gost vertex
         distributed_REM(owner[y], y, x, x, y, p_process[owner[x]][x]) # COM
 
 
-# Debug some results
-for process in range(nprocs):
-    print('--- Process', process)
-    # print(' - nodes:', [x for x in range(n) if owner[x] == process])
-    # print(' - keeps:', keep[process])
-    # print(' - surounding:', surounding_edges[process])
-    print(' - nodes:', len([x for x in range(n) if owner[x] == process]))
-    print(' - edges:', len(edges[process]))
-    print(' - keeps:', len(keep[process]))
-    print(' - surounding:', len(surounding_edges[process]))
+if len(argv) > 1 and argv[1] == 'debug':
+    # Debug some general informations
+    for process in range(nprocs):
+        print('--- Process', process)
+        # print(' - nodes:', [x for x in range(n) if owner[x] == process])
+        # print(' - keeps:', keep[process])
+        # print(' - surounding:', surounding_edges[process])
+        print(' - nodes:', len([x for x in range(n) if owner[x] == process]))
+        print(' - edges:', len(edges[process]))
+        print(' - keeps:', len(keep[process]))
+        print(' - surounding:', len(surounding_edges[process]))
 
 
-print('--- A total of', sum((len(l) for l in keep)), 'edges')
-print('--- Communications: ', NCOMS)
+    print('--- A total of', sum((len(l) for l in keep)), 'edges')
+    print('--- Communications: ', NCOMS)
+else:
+    # Print the resulting tree
+    print(n, sum((len(l) for l in keep)))
+
+    for bucket in keep:
+        for (x, y) in bucket:
+            print(x, y)

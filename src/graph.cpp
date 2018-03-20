@@ -14,15 +14,6 @@ std::vector<std::vector<size_t>> Graph::asAdjacencyList() const
         result[edge.second].push_back(edge.first);
     }
 
-    // Remove redonduncy
-    for (size_t i = 0 ; i < nb_vertices ; i++) {
-        std::sort(result[i].begin(), result[i].end());
-        result[i].erase(
-            std::unique(result[i].begin(), result[i].end()),
-            result[i].end()
-        );
-    }
-
     return result;
 }
 
@@ -39,7 +30,11 @@ Graph complete_graph(size_t n)
 
 Graph random_graph(size_t n, size_t m)
 {
+    // std::random_device()
+    std::random_device r;
     std::default_random_engine generator;
+    generator.seed(r());
+
     std::uniform_int_distribution<int> distribution(0, n-1);
     auto rand_edge = std::bind(distribution, generator);
 
@@ -65,8 +60,15 @@ std::istream& operator>>(std::istream& input, Graph& graph)
     size_t x, y;
     for (int i = 0 ; i < m ; i++) {
         input >> x >> y;
-        graph.edges.emplace_back(x, y);
+        graph.edges.emplace_back(std::min(x, y), std::max(x, y));
     }
+
+    // Remove redonduncy
+    std::sort(graph.edges.begin(), graph.edges.end());
+    graph.edges.erase(
+        std::unique(graph.edges.begin(), graph.edges.end()),
+        graph.edges.end()
+    );
 
     return input;
 }

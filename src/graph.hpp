@@ -48,6 +48,7 @@ Graph random_graph(size_t n, size_t m);
 
 /**
  * Read a graph from a stream.
+ * While reading the input, we ensure that no vertex is writen twice.
  * The graph is formated in following form:
  *   | nb_vertices nb_edges
  *   | x1 y1
