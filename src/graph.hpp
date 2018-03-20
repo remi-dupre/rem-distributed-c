@@ -50,10 +50,12 @@ Graph random_graph(size_t n, size_t m);
  * Read/Write a graph from/to a stream.
  * While reading the input, we ensure that no vertex is writen twice.
  * The graph is formated in following form:
- *   | nb_vertices nb_edges
+ *   | nb_vertices
  *   | x1 y1
  *   | x2 y2
  *   | ...
+ *   | nb_vertices nb_vertices
+ * The last vertex is here to specify the end.
  */
 std::istream& operator>>(std::istream& input, Graph& graph);
 std::ostream& operator<<(std::ostream& output, const Graph& graph);

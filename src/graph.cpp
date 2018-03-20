@@ -48,18 +48,21 @@ Graph random_graph(size_t n, size_t m)
 
 std::istream& operator>>(std::istream& input, Graph& graph)
 {
-    int n, m;
-    input >> n >> m;
+    size_t n;
+    input >> n;
 
     assert(n >= 0);
-    assert(m >= 0);
 
     graph.nb_vertices = n;
     graph.edges.clear();
 
     size_t x, y;
-    for (int i = 0 ; i < m ; i++) {
+    while (true) {
         input >> x >> y;
+
+        if (x == n || y == n)
+            break;
+
         graph.edges.emplace_back(std::min(x, y), std::max(x, y));
     }
 
@@ -75,11 +78,12 @@ std::istream& operator>>(std::istream& input, Graph& graph)
 
 std::ostream& operator<<(std::ostream& output, const Graph& graph)
 {
-    output << graph.nb_vertices << ' ' << graph.edges.size() << std::endl;
+    output << graph.nb_vertices << std::endl;
 
     for (const Edge& edge: graph.edges) {
         output << edge.first << ' ' << edge.second << std::endl;
     }
 
+    output << graph.nb_vertices << ' ' << graph.nb_vertices << std::endl;
     return output;
 }

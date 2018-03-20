@@ -45,17 +45,20 @@ std::istream& operator>>(std::istream& input, GraphPrintBin& graphb)
 {
     Graph& graph = graphb.ref;
 
-    uint32_t n, m, x, y;
+    uint32_t n, x, y;
 
     input.read(reinterpret_cast<char*>(&n), sizeof(uint32_t));
-    input.read(reinterpret_cast<char*>(&m), sizeof(uint32_t));
 
     graph.nb_vertices = n;
     graph.edges.clear();
 
-    for (size_t i = 0 ; i < m ; i++) {
+    while (true) {
         input.read(reinterpret_cast<char*>(&x), sizeof(uint32_t));
         input.read(reinterpret_cast<char*>(&y), sizeof(uint32_t));
+
+        if (x == n || y == n)
+            break;
+
         graph.edges.emplace_back(x, y);
     }
 
@@ -67,10 +70,8 @@ std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb)
     const Graph& graph = graphb.ref;
 
     uint32_t n = graph.nb_vertices;
-    uint32_t m = graph.edges.size();
 
     output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
-    output.write(reinterpret_cast<char*>(&m), sizeof(uint32_t));
 
     for (const Edge& edge: graph.edges) {
         uint32_t x = edge.first;
@@ -80,5 +81,7 @@ std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb)
         output.write(reinterpret_cast<char*>(&x), sizeof(uint32_t));
     }
 
+    output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
+    output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
     return output;
 }
