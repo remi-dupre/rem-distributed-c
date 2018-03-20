@@ -13,7 +13,7 @@ This is a request sent to a processor, asking it to run on its local tree, try t
 
 ### Inputs: 'task (r_x, r_y)'
  - **r_x**, **r_y**: current edges we compute on, we want to check if they are already in the same component
- - **p(r_y)**: if **r_y** is not owned by this process, this is the only way to get its parent
+ - **p(r_y)**: if *r_y* is not owned by this process, this is the only way to get its parent. It gives a speedup to be able to directly jump to next process but this is not necessary. If *p(r_y)* is not known, it can be set to *r_y*, the algorithm will then ask to its owner to conclude on anything.
  - **(x, y)**: the edges that initialy started this request
 
 ### Assumptions

@@ -93,8 +93,7 @@ def distributed_REM(process, r_x, r_y, x, y, pr_y=None):
     # print('%d: %d, %d (%d, %d)' % (process, r_x, r_y, x, y))
     p = p_process[process]
 
-    if pr_y is None:
-        assert(owner[r_y] == process)
+    if owner[r_y] == process:
         pr_y = p[r_y]
     else:
         p[r_y] = pr_y
@@ -123,8 +122,7 @@ def distributed_REM(process, r_x, r_y, x, y, pr_y=None):
             distributed_REM(owner[z], z, r_y, x, y, p[r_y]) # COM
     else:
         if r_y == p[r_y]:
-            p_process[owner[r_y]][r_y] = p[r_x] # COM
-            keep[process].append((x, y))
+            distributed_REM(owner[r_y], r_y, r_x, x, y, p[r_x]) # COM
         else:
             z = p[r_y]
             NCOMS += 1
@@ -135,7 +133,8 @@ for process in range(nprocs):
     # Simulate the distributed calls
     for x, y in surounding_edges[process]:
         x -= n  # This is a gost vertex
-        distributed_REM(owner[y], y, x, x, y, p_process[owner[x]][x]) # COM
+        NCOMS -= 1  # The first call isn't a COM
+        distributed_REM(owner[x], x, y, x, y, y)
 
 
 if len(argv) > 1 and argv[1] == 'debug':
