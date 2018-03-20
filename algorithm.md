@@ -65,12 +65,6 @@ else:
 ### Messages
 During the distributed phase, process can exchange two kind of messages.
 
-#### Update
-Ask to change a parent, if it offers an enhancement.
- - **node**: the node that needs a parental update
- - **val**: the id of the node's new parent
-Thus *8 bytes* of data to send if 32 bits integers are used.
-
 #### Task
 Ask to take controll of a find-union operation.
  - **(x, y)**: the original edge we want to insert
