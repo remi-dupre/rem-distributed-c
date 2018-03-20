@@ -25,3 +25,10 @@ bool is_forest(const Graph& graph);
  * Checks wether an input graph is a tree.
  */
 bool is_tree(const Graph& graph);
+
+/**
+ * Split a graph into p separate parts.
+ * Return a vector of size `nb_parts`, each part containing a graph, its internal
+ *   vertices and neighbour vertices.
+ */
+std::vector<Graph> split(const Graph& graph, size_t nb_parts);

@@ -55,3 +55,17 @@ bool is_forest(const Graph& graph)
 
     return true;
 }
+
+std::vector<Graph> split(const Graph& graph, size_t nb_parts)
+{
+    std::vector<Graph> result(nb_parts, Graph(graph.nb_vertices));
+
+    for (const Edge& edge: graph.edges) {
+        result[edge.first % nb_parts].edges.push_back(edge);
+
+        if (edge.first % nb_parts != edge.second % nb_parts)
+            result[edge.second % nb_parts].edges.push_back(edge);
+    }
+
+    return result;
+}

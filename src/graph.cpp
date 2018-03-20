@@ -51,8 +51,6 @@ std::istream& operator>>(std::istream& input, Graph& graph)
     size_t n;
     input >> n;
 
-    assert(n >= 0);
-
     graph.nb_vertices = n;
     graph.edges.clear();
 

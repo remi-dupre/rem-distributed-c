@@ -46,10 +46,10 @@ struct GraphPrintBin
  * Manipulator function, a graph called inside this function will be send and received to strings in a binary format.
  * Example: std::cout >> bin_format(graph);
  */
-GraphPrintBin bin_format(Graph& graph) { return GraphPrintBin(graph); }
+GraphPrintBin bin_format(Graph& graph);
 
 /**
  * Read/Write a graph to/from a string as binary.
  */
-std::istream& operator>>(std::istream& input, GraphPrintBin& graphb);
+std::istream& operator>>(std::istream& input, GraphPrintBin graphb);
 std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb);

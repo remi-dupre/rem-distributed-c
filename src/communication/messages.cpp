@@ -41,7 +41,12 @@ std::ostream& operator<<(std::ostream& output, const Task& task)
     return output;
 }
 
-std::istream& operator>>(std::istream& input, GraphPrintBin& graphb)
+GraphPrintBin bin_format(Graph& graph)
+{
+    return GraphPrintBin(graph);
+}
+
+std::istream& operator>>(std::istream& input, GraphPrintBin graphb)
 {
     Graph& graph = graphb.ref;
 
