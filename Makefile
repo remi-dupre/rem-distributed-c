@@ -1,5 +1,5 @@
 # Names of the programs we want to compile
-TARGETS = compare spaning_forest generate infos mpitest
+TARGETS = compare spanning_forest generate infos mpitest
 
 # C++ compiler
 CXX = mpic++

@@ -7,7 +7,7 @@
 #include <functional>
 #include <vector>
 
-#include "spaningtree/rem.hpp"
+#include "spanningtree/rem.hpp"
 #include "graph.hpp"
 
 

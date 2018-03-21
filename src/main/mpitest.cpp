@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "../spaningtree/rem_distributed.hpp"
+#include "../spanningtree/rem_distributed.hpp"
 
 
 int main(int argc, const char** argv) {

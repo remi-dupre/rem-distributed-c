@@ -81,4 +81,4 @@ It seems that a correctness proof of this algorithm can easily be done by checki
  1. The union of process's forests is a forest.
  2. The union of process's forests union the set of edges we are propagating has the same accessibility relation as the original graph.
 
-Note that when there is no more edges to check, theses two rules are exactly checking that the union of process's forests is a spaning forest of the original graph.
+Note that when there is no more edges to check, theses two rules are exactly checking that the union of process's forests is a spanning forest of the original graph.

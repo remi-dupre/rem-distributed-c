@@ -58,7 +58,7 @@ void RemDistributed::initTasks()
     relations = rem_components(internal_graph);
 
     // Get the edges we want to try to send
-    Graph to_send = rem_spaning(border_graph, relations);
+    Graph to_send = rem_spanning(border_graph, relations);
 
     for (const Edge& edge: to_send.edges)
         todo.emplace(edge.first, edge.second);

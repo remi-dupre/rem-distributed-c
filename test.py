@@ -2,7 +2,7 @@
 """
 Sequentialy simulate the distributed algorithm.
 Usage:
-    `python3 test.py`       ouputs a spaning tree of input graph
+    `python3 test.py`       ouputs a spanning tree of input graph
     `python3 test.py debug` give some general informations about the calculation
 """
 from sys import argv
@@ -21,7 +21,7 @@ owner = [i % nprocs for i in range(n)] * 2
 edges = [set() for i in range(nprocs)]
 surounding_edges = [set() for i in range(nprocs)]
 
-# Edges that are part of the spaning tree
+# Edges that are part of the spanning tree
 keep = [[] for i in range(nprocs)]
 keep_surounding = [[] for i in range(nprocs)]
 

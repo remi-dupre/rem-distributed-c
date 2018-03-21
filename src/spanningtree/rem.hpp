@@ -1,5 +1,5 @@
 /**
- * Implementation of REM's algorithm to calculate spaning forests.
+ * Implementation of REM's algorithm to calculate spanning forests.
  */
 #pragma once
 
@@ -10,14 +10,14 @@
 
 
 /**
- * Return a spaning tree given a graph.
+ * Return a spanning tree given a graph.
  * If initial is specified, this will start processing from an initial state.
  * If initial is not constant, this function will modify it in place.
  * The resulting forest only contains new edges to add.
  */
-Graph rem_spaning_inplace(const Graph& graph, std::vector<size_t>& initial);
-Graph rem_spaning(const Graph& graph, const std::vector<size_t>& initial);
-Graph rem_spaning(const Graph& graph);
+Graph rem_spanning_inplace(const Graph& graph, std::vector<size_t>& initial);
+Graph rem_spanning(const Graph& graph, const std::vector<size_t>& initial);
+Graph rem_spanning(const Graph& graph);
 
 /**
  * Return components of the graph using disjoint-set datastructure.
