@@ -52,16 +52,21 @@ public:
     void initTasks();
 
     /**
-     * Work on a chunk of tasks that are enqueued.
-     * If the `task_count` parameter is negative, process all the queue.
-     */
-    void processTasks(int task_count = -1);
-
-    /**
      * Run a task, try to decide if r_x and r_y are linked.
      * If the task must continue on another process, add it to todo[other].
      */
     void runTask(Task& task);
+
+    /**
+    * Work on a chunk of tasks that are enqueued.
+    * If the `task_count` parameter is negative, process all the queue.
+    */
+    void dequeueTasks(int task_count = -1);
+
+    /**
+     * Share tasks waiting to be sent to other processes.
+     */
+    void spreadTasks();
 
     /**
      * Returns process id of the owner of a vertex.

@@ -68,17 +68,6 @@ void RemDistributed::initTasks()
         todo[process].emplace(edge.first, edge.second);
 }
 
-void RemDistributed::processTasks(int task_count)
-{
-    while (task_count != 0 && !todo[process].empty()) {
-        task_count--;
-
-        Task task = todo[process].front();
-        runTask(task);
-        todo[process].pop();
-    }
-}
-
 void RemDistributed::runTask(Task& task)
 {
     std::vector<size_t>& p = uf_parent;
@@ -126,6 +115,43 @@ void RemDistributed::runTask(Task& task)
     else {
         todo[owner(p[r_y])].emplace(p[r_y], r_x, p[r_x]);
     }
+}
+
+void RemDistributed::dequeueTasks(int task_count)
+{
+    while (task_count != 0 && !todo[process].empty()) {
+        task_count--;
+
+        Task task = todo[process].front();
+        runTask(task);
+        todo[process].pop();
+    }
+}
+
+void RemDistributed::spreadTasks()
+{
+    std::vector<std::string> buffers(nb_process);
+
+    for (int i = 0 ; i < nb_process ; i++) {
+        if (i == process)
+            continue;
+
+        std::stringstream ss;
+
+        while (!todo[i].empty()) {
+            ss << todo[i].front();
+            todo[i].pop();
+        }
+
+        buffers[i] = ss.str();
+    }
+
+    mtm_channel.send(buffers);
+
+    Task new_task;
+    std::stringstream incoming_data(mtm_channel.receive_merged());
+    while (incoming_data >> new_task)
+        todo[process].push(new_task);
 }
 
 int RemDistributed::owner(size_t vertex) const

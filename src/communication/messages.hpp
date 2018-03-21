@@ -19,6 +19,8 @@ struct Task
 {
     size_t r_x, r_y, p_r_y;
 
+    Task() = default;
+
     Task(size_t x, size_t y) :
         r_x(x), r_y(y), p_r_y(y)
     {}
