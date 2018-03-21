@@ -60,7 +60,7 @@ else:
         send the task (r_y, r_x) to owner(r_y)
     else:
         z <- p(r_y) # necessary if owner[r_y] == process
-        ask owner(r_y) to set p(r_y) <- p(r_x)
+        ask owner(r_y) to set p(r_y) <- p(r_x)  # Maybe avoid this communication
         send the task (z, r_x) to owner(z)
 ```
 

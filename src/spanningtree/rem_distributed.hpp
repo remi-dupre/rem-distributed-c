@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
@@ -51,9 +52,26 @@ public:
     void initTasks();
 
     /**
+     * Work on a chunk of tasks that are enqueued.
+     * If the `task_count` parameter is negative, process all the queue.
+     */
+    void processTasks(int task_count = -1);
+
+    /**
+     * Run a task, try to decide if r_x and r_y are linked.
+     * If the task must continue on another process, add it to todo[other].
+     */
+    void runTask(Task& task);
+
+    /**
      * Returns process id of the owner of a vertex.
      */
     int owner(size_t vertex) const;
+
+    /**
+     * Get the local root of a vertex among owned nodes.
+     */
+    size_t local_root(size_t vertex);
 
     /**
      * Display some general informations on stdout.
@@ -80,8 +98,9 @@ private:
 
     // local links between nodes we own
     // this is represented with a classical disjoint set datastructure
-    std::vector<size_t> relations;
+    std::vector<size_t> uf_parent;
 
-    // list of tasks for this process
-    std::queue<Task> todo;
+    // list of tasks to send to processes indexed by process id
+    // the queue corresponding to this process is used here
+    std::vector<std::queue<Task>> todo;
 };
