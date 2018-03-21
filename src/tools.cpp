@@ -63,8 +63,8 @@ std::vector<Graph> split(const Graph& graph, size_t nb_parts)
     for (const Edge& edge: graph.edges) {
         result[edge.first % nb_parts].edges.push_back(edge);
 
-        if (edge.first % nb_parts != edge.second % nb_parts)
-            result[edge.second % nb_parts].edges.push_back(edge);
+        // if (edge.first % nb_parts != edge.second % nb_parts)
+        //     result[edge.second % nb_parts].edges.push_back(edge);
     }
 
     return result;
@@ -75,12 +75,15 @@ void redistribute(Graph& graph, int nb_parts)
     int n = graph.nb_vertices;
     int p = nb_parts;
     auto f = [n, p] (size_t x) {
-        return (((n + 1) * p * x) / n) % n;
+        return (p * x) % (p * (n / p)) + (p * x) / n;
     };
 
     for (Edge& edge: graph.edges)
     {
-        edge.first = f(edge.first);
-        edge.second = f(edge.second);
+        size_t x = f(edge.first);
+        size_t y = f(edge.second);
+
+        edge.first = std::min(x, y);
+        edge.second = std::max(x, y);
     }
 }

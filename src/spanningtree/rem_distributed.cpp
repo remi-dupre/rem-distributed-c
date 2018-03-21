@@ -47,7 +47,7 @@ void RemDistributed::loadGraph()
     {
         if (owner(edge.first) == process && owner(edge.second) == process)
             internal_graph.edges.push_back(edge);
-        else if(owner(edge.first) == process)
+        else
             border_graph.edges.push_back(edge);
     }
 }
@@ -66,7 +66,7 @@ void RemDistributed::initTasks()
 
 int RemDistributed::owner(size_t vertex) const
 {
-    return (vertex % nb_process);
+    return vertex % nb_process;
 }
 
 void RemDistributed::debug() const

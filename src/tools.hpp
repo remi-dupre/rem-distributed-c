@@ -37,8 +37,9 @@ std::vector<Graph> split(const Graph& graph, size_t nb_parts);
  * Redistribute nodes indexes so that if we pickup indexes spaced by (n / p),
  *   they were previously consecutives.
  * To do so, if we cut `n` indexes in `p` parts, we replace index `x` with
- *              (n + 1) p x
- *      f(x) = -------------  %  n
- *                   n
+ *      f(x) = (p*x) % (p * (n/p)) + (p*x / n)
+ * For example with n = 7 and p = 2, the result would be:
+ *   x    | 0 1 2 3 4 5 6
+ *   f(x) | 0 2 4 6 1 3 5
  */
 void redistribute(Graph& graph, int nb_parts);
