@@ -29,6 +29,7 @@ int main(int argc, const char** argv) {
     }
 
     rem_engine.loadGraph();
+    rem_engine.initTasks();
 
     std::cout << "---------- " << process << " ----------" << std::endl;
     rem_engine.debug();

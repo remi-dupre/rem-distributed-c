@@ -8,19 +8,24 @@
 #include "../graph.hpp"
 
 
+
+
 /**
- * Indicate that a task should be run from this process.
+ * Represent a task of the algorithm.
+ * This task contains an edge (r_x, r_y) that we need to put in same component.
+ * It can also contain p[r_y], if it is not known, we should make it be r_y
  */
 struct Task
 {
-    /**
-     * Quick constructor for a task.
-     */
-    Task(size_t r_x, size_t r_y, size_t x, size_t y, size_t p_r_y);
+    size_t r_x, r_y, p_r_y;
 
-    Edge original;  // The original edge (x, y) to insert in the spaning forest
-    Edge current;   // The current (r_x, r_y) edge to check
-    size_t p_r_y;   // If r_y is not owned by this process, contains p[r_y]
+    Task(size_t x, size_t y) :
+        r_x(x), r_y(y), p_r_y(y)
+    {}
+
+    Task(size_t x, size_t y, size_t p_y) :
+        r_x(x), r_y(y), p_r_y(p_y)
+    {}
 };
 
 /**

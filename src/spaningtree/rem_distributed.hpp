@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <mpi.h>
+#include <queue>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -15,6 +16,7 @@
 #include "../communication/messages.hpp"
 #include "../graph.hpp"
 #include "../tools.hpp"
+#include "rem.hpp"
 
 
 /**
@@ -37,9 +39,16 @@ public:
     void sendGraph(std::istream& input);
 
     /**
-     * Load a graph sent by the main process.
+     * Load a graph sent by the main process. Override any loaded graph.
      */
     void loadGraph();
+
+    /**
+     * Run the initial local processing:
+     *  - create first state of the disjoint set structure owned by this process
+     *  - create the initial queue of tasks with local vertices
+     */
+    void initTasks();
 
     /**
      * Returns process id of the owner of a vertex.
@@ -68,4 +77,11 @@ private:
     // channels to exchange with other processes
     OneToMany otm_channel;
     ManyToMany mtm_channel;
+
+    // local links between nodes we own
+    // this is represented with a classical disjoint set datastructure
+    std::vector<size_t> relations;
+
+    // list of tasks for this process
+    std::queue<Task> todo;
 };

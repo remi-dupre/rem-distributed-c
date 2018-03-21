@@ -45,9 +45,21 @@ void RemDistributed::loadGraph()
     {
         if (owner(edge.first) == process && owner(edge.second) == process)
             internal_graph.edges.push_back(edge);
-        else
+        else if(owner(edge.first) == process)
             border_graph.edges.push_back(edge);
     }
+}
+
+void RemDistributed::initTasks()
+{
+    // Calculate initial state of the disjoint-set
+    relations = rem_components(internal_graph);
+
+    // Get the edges we want to try to send
+    Graph to_send = rem_spaning(border_graph, relations);
+
+    for (const Edge& edge: to_send.edges)
+        todo.emplace(edge.first, edge.second);
 }
 
 int RemDistributed::owner(size_t vertex) const
@@ -59,4 +71,5 @@ void RemDistributed::debug() const
 {
     std::cout << "Internal edges: " << internal_graph.edges.size() << std::endl;
     std::cout << "Border edges: " << border_graph.edges.size() << std::endl;
+    std::cout << "Remaining tasks: " << todo.size() << std::endl;
 }

@@ -1,15 +1,13 @@
 #include "rem.hpp"
 
 
-std::pair<Graph, std::vector<size_t>> rem(const Graph& graph)
+Graph rem_spaning_inplace(const Graph& graph, std::vector<size_t>& initial)
 {
     // Graph containing our solution
     Graph spaning_tree(graph.nb_vertices);
 
     // Disjoint set structure
-    std::vector<size_t> p(graph.nb_vertices);
-    for (size_t i = 0 ; i < p.size() ; i++)
-        p[i] = i;
+    std::vector<size_t>& p = initial;
 
     // Check every candidate edge
     for (const Edge& edge: graph.edges) {
@@ -44,15 +42,39 @@ std::pair<Graph, std::vector<size_t>> rem(const Graph& graph)
         }
     }
 
-    return std::make_pair(spaning_tree, p);
+    return spaning_tree;
 }
 
-std::vector<size_t> rem_components(const Graph& graph)
+Graph rem_spaning(const Graph& graph, const std::vector<size_t>& initial)
 {
-    return rem(graph).second;
+    std::vector<size_t> uf(initial);
+    return rem_spaning_inplace(graph, uf);
 }
 
 Graph rem_spaning(const Graph& graph)
 {
-    return rem(graph).first;
+    std::vector<size_t> uf(graph.nb_vertices);
+
+    for (size_t i = 0 ; i < graph.nb_vertices ; i++)
+        uf[i] = i;
+
+    return rem_spaning_inplace(graph, uf);
+}
+
+std::vector<size_t> rem_components(const Graph& graph, const std::vector<size_t>& initial)
+{
+    std::vector<size_t> uf(initial);
+    rem_spaning_inplace(graph, uf);
+    return uf;
+}
+
+std::vector<size_t> rem_components(const Graph& graph)
+{
+    std::vector<size_t> uf(graph.nb_vertices);
+
+    for (size_t i = 0 ; i < graph.nb_vertices ; i++)
+        uf[i] = i;
+
+    rem_spaning_inplace(graph, uf);
+    return uf;
 }
