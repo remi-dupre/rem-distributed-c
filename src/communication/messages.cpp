@@ -28,52 +28,80 @@ std::ostream& operator<<(std::ostream& output, const Task& task)
     return output;
 }
 
+IntPrintBin bin_format(size_t& integer)
+{
+    return IntPrintBin(integer);
+}
+
+EdgePrintBin bin_format(Edge& edge)
+{
+    return EdgePrintBin(edge);
+}
+
 GraphPrintBin bin_format(Graph& graph)
 {
     return GraphPrintBin(graph);
+}
+
+std::istream& operator>>(std::istream& input, IntPrintBin integerb)
+{
+    uint32_t integer;
+
+    input.read(reinterpret_cast<char*>(&integer), sizeof(uint32_t));
+    integerb.ref = integer;
+
+    return input;
+}
+
+std::istream& operator>>(std::istream& input, EdgePrintBin edgeb)
+{
+    input >> bin_format(edgeb.ref.first) >> bin_format(edgeb.ref.second);
+    return input;
 }
 
 std::istream& operator>>(std::istream& input, GraphPrintBin graphb)
 {
     Graph& graph = graphb.ref;
 
-    uint32_t n, x, y;
-
-    input.read(reinterpret_cast<char*>(&n), sizeof(uint32_t));
-
-    graph.nb_vertices = n;
+    input >> bin_format(graph.nb_vertices);
     graph.edges.clear();
 
+    Edge edge;
     while (true) {
-        input.read(reinterpret_cast<char*>(&x), sizeof(uint32_t));
-        input.read(reinterpret_cast<char*>(&y), sizeof(uint32_t));
+        input >> bin_format(edge);
 
-        if (x == n || y == n)
+        if (edge.first == graph.nb_vertices || edge.second == graph.nb_vertices)
             break;
 
-        graph.edges.emplace_back(x, y);
+        graph.edges.push_back(edge);
     }
 
     return input;
 }
 
+std::ostream& operator<<(std::ostream& output, const IntPrintBin& integerb)
+{
+    uint32_t integer = integerb.ref;
+    output.write(reinterpret_cast<char*>(&integer), sizeof(uint32_t));
+    return output;
+}
+
+std::ostream& operator<<(std::ostream& output, const EdgePrintBin& edgeb)
+{
+    Edge edge = edgeb.ref;
+    output << bin_format(edge.first) << bin_format(edge.second);
+    return output;
+}
+
 std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb)
 {
     const Graph& graph = graphb.ref;
+    size_t n = graph.nb_vertices;
+    output << bin_format(n);
 
-    uint32_t n = graph.nb_vertices;
+    for (Edge edge: graph.edges)
+        output << bin_format(edge);
 
-    output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
-
-    for (const Edge& edge: graph.edges) {
-        uint32_t x = edge.first;
-        uint32_t y = edge.second;
-
-        output.write(reinterpret_cast<char*>(&y), sizeof(uint32_t));
-        output.write(reinterpret_cast<char*>(&x), sizeof(uint32_t));
-    }
-
-    output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
-    output.write(reinterpret_cast<char*>(&n), sizeof(uint32_t));
+    output << bin_format(n) << bin_format(n);
     return output;
 }

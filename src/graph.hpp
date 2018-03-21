@@ -54,7 +54,6 @@ Graph random_graph(size_t n, size_t m);
  *   | x1 y1
  *   | x2 y2
  *   | ...
- *   | nb_vertices nb_vertices
  * The last vertex is here to specify the end.
  */
 std::istream& operator>>(std::istream& input, Graph& graph);

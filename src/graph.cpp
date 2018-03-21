@@ -55,14 +55,8 @@ std::istream& operator>>(std::istream& input, Graph& graph)
     graph.edges.clear();
 
     size_t x, y;
-    while (true) {
-        input >> x >> y;
-
-        if (x == n || y == n)
-            break;
-
+    while (input >> x >> y)
         graph.edges.emplace_back(std::min(x, y), std::max(x, y));
-    }
 
     return input;
 }
@@ -75,6 +69,5 @@ std::ostream& operator<<(std::ostream& output, const Graph& graph)
         output << edge.first << ' ' << edge.second << std::endl;
     }
 
-    output << graph.nb_vertices << ' ' << graph.nb_vertices << std::endl;
     return output;
 }

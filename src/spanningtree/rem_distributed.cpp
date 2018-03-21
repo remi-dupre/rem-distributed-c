@@ -17,42 +17,85 @@ void RemDistributed::sendGraph(std::istream& input)
 {
     assert(process == source);
 
-    // Split the graph
-    Graph full_graph;
-    input >> full_graph;
-    redistribute(full_graph, nb_process);
+    // Send edges by chunks of this size
+    constexpr int trigger_launch = 32000;
 
-    std::vector<Graph> graphs = split(full_graph, nb_process);
+    std::vector<std::stringstream> ss(nb_process);
 
-    // Format data
-    std::vector<std::string> data;
-    for (int i = 0 ; i < nb_process ; i++) {
-        std::stringstream ss;
-        ss << bin_format(graphs[i]);
-        data.push_back(ss.str());
+    size_t n;
+    input >> n;
+
+    // Permutation of edges that regroups them
+    size_t p = nb_process;
+    auto f = [n, p] (size_t x) -> size_t {
+        return (p * x) % (p * (n / p)) + (p * x) / n;
+    };
+
+    // Flush datas
+    auto flush = [&ss, this] () -> void {
+        std::vector<std::string> data(nb_process);
+
+        for (int i = 0 ; i < nb_process ; i++)
+            data[i] = ss[i].str();
+
+        otm_channel.send(data);
+    };
+
+    // Send the graph size to everyone
+    for (int i = 0 ; i < nb_process ; i++)
+        ss[i] << bin_format(n);
+
+    Edge edge;
+    while (input >> edge.first >> edge.second) {
+        // Transform edge indexes to regroup contiguous edges
+        edge = std::make_pair(
+            std::min(f(edge.first), f(edge.second)),
+            std::max(f(edge.first), f(edge.second))
+        );
+        ss[owner(edge.first)] << bin_format(edge);
+
+        // Flush datas
+        if (ss[owner(edge.first)].tellg() >= trigger_launch || input.eof()) {
+            flush();
+        }
     }
 
-    // Send data
-    otm_channel.send(data);
+    if (input.eof())
+        for (int i = 0 ; i < nb_process ; i++)
+            ss[i] << bin_format(n) << bin_format(n);
+
+    flush();
 }
 
 void RemDistributed::loadGraph()
 {
-    Graph full_graph;
+    size_t nb_vertices;
     std::stringstream data(otm_channel.receive());
-    data >> bin_format(full_graph);
+    data >> bin_format(nb_vertices);
 
-    internal_graph = Graph(full_graph.nb_vertices);
-    border_graph = Graph(full_graph.nb_vertices);
+    internal_graph = Graph(nb_vertices);
+    border_graph = Graph(nb_vertices);
 
-    for (const Edge& edge: full_graph.edges)
-    {
-        if (owner(edge.first) == process && owner(edge.second) == process)
-            internal_graph.edges.push_back(edge);
-        else if(owner(edge.first) == process)
-            border_graph.edges.push_back(edge);
-        else
-            border_graph.edges.emplace_back(edge.second, edge.first);
+    // Loops until we obtained the whole graph
+    while (true) {
+        Edge edge;
+
+        while (data >> bin_format(edge))
+        {
+            if (edge.first == nb_vertices) {
+                assert(edge.second == nb_vertices);
+                return;
+            }
+
+            if (owner(edge.first) == process && owner(edge.second) == process)
+                internal_graph.edges.push_back(edge);
+            else if(owner(edge.first) == process)
+                border_graph.edges.push_back(edge);
+            else
+                border_graph.edges.emplace_back(edge.second, edge.first);
+        }
+
+        data.str(otm_channel.receive());
     }
 }
 

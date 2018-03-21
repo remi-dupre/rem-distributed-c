@@ -49,14 +49,38 @@ struct GraphPrintBin
     {}
 };
 
+struct IntPrintBin
+{
+    size_t& ref;
+
+    IntPrintBin(size_t& integer) :
+        ref(integer)
+    {}
+};
+
+struct EdgePrintBin
+{
+    Edge& ref;
+
+    EdgePrintBin(Edge& edge) :
+        ref(edge)
+    {}
+};
+
 /**
  * Manipulator function, a graph called inside this function will be send and received to strings in a binary format.
  * Example: std::cout >> bin_format(graph);
  */
+IntPrintBin bin_format(size_t& integer);
+EdgePrintBin bin_format(Edge& edge);
 GraphPrintBin bin_format(Graph& graph);
 
 /**
  * Read/Write a graph to/from a string as binary.
  */
+std::istream& operator>>(std::istream& input, IntPrintBin integerb);
+std::istream& operator>>(std::istream& input, EdgePrintBin edgeb);
 std::istream& operator>>(std::istream& input, GraphPrintBin graphb);
+std::ostream& operator<<(std::ostream& output, const IntPrintBin& integerb);
+std::ostream& operator<<(std::ostream& output, const EdgePrintBin& edgeb);
 std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb);

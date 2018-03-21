@@ -34,10 +34,11 @@ void OneToMany::send(const std::vector<std::string>& data)
     );
 
     // Send datas
-    source_buffer.resize(my_size);
+    size_t buff_old_size = source_buffer.size();
+    source_buffer.resize(buff_old_size + my_size);
     MPI_Scatterv(
         sendbuf.data(), sendcount.data(), displs.data(), MPI_CHAR,
-        &source_buffer[0], my_size, MPI_CHAR,
+        &source_buffer[buff_old_size], my_size, MPI_CHAR,
         source, communicator
     );
 }
