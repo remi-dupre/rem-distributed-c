@@ -10,6 +10,7 @@
 #include "../graph.hpp"
 #include "../tools.hpp"
 #include "../communication/onetomany.hpp"
+#include "../communication/manytomany.hpp"
 
 
 int main(int argc, const char** argv) {
@@ -19,6 +20,18 @@ int main(int argc, const char** argv) {
     int process, nb_process;
     MPI_Comm_rank(MPI_COMM_WORLD, &process);
     MPI_Comm_size(MPI_COMM_WORLD, &nb_process);
+
+    // A test of many to many communication
+    std::vector<std::string> datat = {
+        "this is for process 0 from " + std::to_string(process) + " ; ",
+        "this is for process 1 from " + std::to_string(process) + " ; ",
+        "this is for process 2 from " + std::to_string(process) + " ; ",
+        "this is for process 3 from " + std::to_string(process) + " ; ",
+    };
+
+    ManyToMany mtm(MPI_COMM_WORLD);
+    mtm.send(datat);
+    std::cout << process << ": " << mtm.receive_merged() << std::endl;
 
     // Get graphs to send
     std::vector<std::string> data;

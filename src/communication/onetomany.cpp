@@ -22,7 +22,6 @@ void OneToMany::send(const std::vector<std::string>& data)
         displs.push_back(cumul_size);
         sendcount.push_back(proc_buff.size());
         sendbuf += proc_buff;
-
         cumul_size += proc_buff.size();
     }
 
