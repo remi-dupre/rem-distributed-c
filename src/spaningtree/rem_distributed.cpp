@@ -18,6 +18,8 @@ void RemDistributed::sendGraph(std::istream& input)
     // Split the graph
     Graph full_graph;
     input >> full_graph;
+    redistribute(full_graph, nb_process);
+
     std::vector<Graph> graphs = split(full_graph, nb_process);
 
     // Format data

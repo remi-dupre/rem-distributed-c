@@ -32,3 +32,13 @@ bool is_tree(const Graph& graph);
  *   vertices and neighbour vertices.
  */
 std::vector<Graph> split(const Graph& graph, size_t nb_parts);
+
+/**
+ * Redistribute nodes indexes so that if we pickup indexes spaced by (n / p),
+ *   they were previously consecutives.
+ * To do so, if we cut `n` indexes in `p` parts, we replace index `x` with
+ *              (n + 1) p x
+ *      f(x) = -------------  %  n
+ *                   n
+ */
+void redistribute(Graph& graph, int nb_parts);
