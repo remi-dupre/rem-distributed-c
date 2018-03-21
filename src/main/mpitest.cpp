@@ -31,8 +31,9 @@ int main(int argc, const char** argv) {
     rem_engine.loadGraph();
     rem_engine.initTasks();
 
-    rem_engine.dequeueTasks();
-    rem_engine.spreadTasks();
+    do {
+        rem_engine.dequeueTasks();
+    } while (rem_engine.spreadTasks());
     std::cout << "---------- " << process << " ----------" << std::endl;
     rem_engine.debug();
 

@@ -45,6 +45,11 @@ public:
     void loadGraph();
 
     /**
+     * Checks wether there is at least a task to process are send.
+     */
+    bool nothingToDo() const;
+
+    /**
      * Run the initial local processing:
      *  - create first state of the disjoint set structure owned by this process
      *  - create the initial queue of tasks with local vertices
@@ -65,8 +70,11 @@ public:
 
     /**
      * Share tasks waiting to be sent to other processes.
+     * If all the processes are done, return false, else return true.
+     * If this process has nothing to do, he will send the fake task
+     *   Task(nb_vertices, nb_vertices).
      */
-    void spreadTasks();
+    bool spreadTasks();
 
     /**
      * Returns process id of the owner of a vertex.

@@ -56,6 +56,15 @@ void RemDistributed::loadGraph()
     }
 }
 
+bool RemDistributed::nothingToDo() const
+{
+    for (const std::queue<Task>& task_list : todo)
+        if (!task_list.empty())
+            return false;
+
+    return true;
+}
+
 void RemDistributed::initTasks()
 {
     // Calculate initial state of the disjoint-set
@@ -128,30 +137,59 @@ void RemDistributed::dequeueTasks(int task_count)
     }
 }
 
-void RemDistributed::spreadTasks()
+bool RemDistributed::spreadTasks()
 {
     std::vector<std::string> buffers(nb_process);
 
-    for (int i = 0 ; i < nb_process ; i++) {
-        if (i == process)
-            continue;
-
+    // If there is nothing to do, give the information to everyone by creating
+    //   fake tasks
+    if (nothingToDo()) {
         std::stringstream ss;
+        ss << Task(
+            internal_graph.nb_vertices,
+            internal_graph.nb_vertices
+        );
 
-        while (!todo[i].empty()) {
-            ss << todo[i].front();
-            todo[i].pop();
+        for (int i = 0 ; i < nb_process ; i++) {
+            buffers[i] = ss.str();
         }
+    }
+    else {
+        for (int i = 0 ; i < nb_process ; i++) {
+            if (i == process)
+                continue;
 
-        buffers[i] = ss.str();
+            std::stringstream ss;
+
+            while (!todo[i].empty()) {
+                ss << todo[i].front();
+                todo[i].pop();
+            }
+
+            buffers[i] = ss.str();
+        }
     }
 
     mtm_channel.send(buffers);
 
     Task new_task;
     std::stringstream incoming_data(mtm_channel.receive_merged());
-    while (incoming_data >> new_task)
+    int nb_fake_tasks = 0;
+
+    while (incoming_data >> new_task) {
+        // Check for fake tasks
+        if (new_task.r_x == internal_graph.nb_vertices) {
+            assert(new_task.r_y == internal_graph.nb_vertices);
+            assert(new_task.p_r_y == internal_graph.nb_vertices);
+
+            nb_fake_tasks++;
+            continue;
+        }
+
         todo[process].push(new_task);
+    }
+
+    return nb_fake_tasks < nb_process;
 }
 
 int RemDistributed::owner(size_t vertex) const
