@@ -35,15 +35,12 @@ void OneToMany::send(const std::vector<std::string>& data)
     );
 
     // Send datas
-    char* recvbuf = (char*) malloc(sendcount[source]);
+    source_buffer.resize(my_size);
     MPI_Scatterv(
         sendbuf.data(), sendcount.data(), displs.data(), MPI_CHAR,
-        recvbuf, my_size, MPI_CHAR,
+        &source_buffer[0], my_size, MPI_CHAR,
         source, communicator
     );
-
-    source_buffer = std::string(recvbuf, my_size);
-    delete recvbuf;
 }
 
 std::string OneToMany::receive()
@@ -59,17 +56,17 @@ std::string OneToMany::receive()
     // Get size informations
     int my_size;
     MPI_Scatter(
-        nullptr, 1, MPI_INT,
+        nullptr, 0, MPI_INT,
         &my_size, 1, MPI_INT,
         source, communicator
     );
 
     // Get datas
-    char* recvbuf = (char*) malloc(my_size);
+    std::string recvbuf(my_size, 0);
     MPI_Scatterv(
         nullptr, nullptr, nullptr, MPI_CHAR,
-        recvbuf, my_size, MPI_CHAR,
+        &recvbuf[0], my_size, MPI_CHAR,
         source, communicator
     );
-    return std::string(recvbuf, my_size);
+    return recvbuf;
 }

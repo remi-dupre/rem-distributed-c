@@ -1,5 +1,6 @@
 #include <mpi.h>
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -11,7 +12,7 @@
 #include "../communication/onetomany.hpp"
 
 
-int main() {
+int main(int argc, const char** argv) {
     MPI_Init(nullptr, nullptr);
 
     // Get general MPI informations
@@ -23,8 +24,18 @@ int main() {
     std::vector<std::string> data;
 
     if (process == 0) {
+        if (argc < 2) {
+            std::cerr << "Please enter a file name" << std::endl;
+            return 1;
+        }
+
+        std::ifstream file;
+        file.open(argv[1], std::ios::in);
+
         Graph full_graph;
-        std::cin >> full_graph;
+        file >> full_graph;
+
+        file.close();
 
         std::vector<Graph> graphs = split(full_graph, nb_process);
 
@@ -35,16 +46,18 @@ int main() {
         }
     }
 
+
     // Send datas
-    OneToMany link(0, MPI_COMM_WORLD);
+    OneToMany channel(0, MPI_COMM_WORLD);
     if (process == 0) {
-        link.send(data);
+        channel.send(data);
     }
-    std::istringstream input(link.receive());
+    auto a = channel.receive();
+    std::istringstream input(a);
 
     Graph my_graph;
     input >> bin_format(my_graph);
-    std::cout << my_graph;
+    std::cout << process << ": " << my_graph.edges.size() << " edges" << std::endl;
 
     MPI_Finalize();
 }

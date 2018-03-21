@@ -1,8 +1,11 @@
 /**
  * Definition of a class handling one to many communication with MPI.
  *
- * More documentation about MPI_Scatterv: https://www.open-mpi.org/doc/v1.4/man3/MPI_Scatterv.3.php
+ * More documentation about MPI_Scatterv:
+ *   https://www.open-mpi.org/doc/v1.4/man3/MPI_Scatterv.3.php
  */
+#pragma once
+
 #include <mpi.h>
 
 #include <cassert>
