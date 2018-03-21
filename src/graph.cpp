@@ -64,13 +64,6 @@ std::istream& operator>>(std::istream& input, Graph& graph)
         graph.edges.emplace_back(std::min(x, y), std::max(x, y));
     }
 
-    // Remove redonduncy
-    std::sort(graph.edges.begin(), graph.edges.end());
-    graph.edges.erase(
-        std::unique(graph.edges.begin(), graph.edges.end()),
-        graph.edges.end()
-    );
-
     return input;
 }
 
