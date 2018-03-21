@@ -224,4 +224,9 @@ void RemDistributed::debug() const
             to_send_count += todo[i].size();
 
     std::cout << "Tasks to send: " << to_send_count << std::endl;
+
+    // std::cout << "Relations:" << std::endl;
+    // for (size_t i = process ; i < internal_graph.nb_vertices ; i += nb_process) {
+    //     std::cout << " - " << i << " -> " << uf_parent[i] << std::endl;
+    // }
 }
