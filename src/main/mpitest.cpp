@@ -9,6 +9,8 @@ using namespace std::chrono;
 
 
 int main(int argc, const char** argv) {
+    std::ios::sync_with_stdio(false);
+
     MPI_Init(nullptr, nullptr);
 
     int time_start = duration_cast< milliseconds >(

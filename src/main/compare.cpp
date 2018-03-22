@@ -8,6 +8,8 @@
 
 
 int main() {
+    std::ios::sync_with_stdio(false);
+
     Graph graph1, graph2;
     std::cin >> graph1 >> graph2;
 

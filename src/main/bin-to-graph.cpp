@@ -13,6 +13,8 @@
 
 int main(int argc, char** argv)
 {
+    std::ios::sync_with_stdio(false);
+
     // Open files
     bool input_file = argc > 1;
 
@@ -44,7 +46,8 @@ int main(int argc, char** argv)
         size_t x = bin_readn(*input);
         size_t y = bin_readn(*input);
 
-        if (input->eof())
+        if (input->
+            eof())
             break;
 
         *output << x << ' ' << y << '\n';

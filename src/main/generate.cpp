@@ -11,6 +11,8 @@
 
 
 int main(int argc, const char* argv[]) {
+    std::ios::sync_with_stdio(false);
+
     if (argc < 2)
         std::cerr << "Usage: `generate type options`" << std::endl;
     if (argc >= 2) {

@@ -12,6 +12,8 @@
 
 int main(int argc, const char** argv)
 {
+    std::ios::sync_with_stdio(false);
+
     // Open files
     bool input_file = argc > 1;
 
