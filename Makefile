@@ -12,7 +12,7 @@ TARGETS =\
 CXX = mpic++
 
 # Compiler flags
-CFLAGS = -std=c++14
+CFLAGS = -std=c++1y
 
 # Debuger flags
 DFLAGS =
