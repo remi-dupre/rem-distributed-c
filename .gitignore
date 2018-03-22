@@ -4,8 +4,20 @@ build
 # Test outputs
 outputs
 
+# Binary inputs
+inputs/*.bin
+
+# Large inputs
+inputs/large*
+
+# Calgrind files
+callgrind.out.*
+
 # Compiled files
 compare
 generate
 spanning_forest
 infos
+bin-to-graph
+graph-to-bin
+mpitest

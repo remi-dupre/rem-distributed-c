@@ -1,5 +1,12 @@
 # Names of the programs we want to compile
-TARGETS = compare spanning_forest generate infos mpitest
+TARGETS =\
+	compare\
+	spanning_forest\
+	generate\
+	infos\
+	mpitest\
+	graph-to-bin\
+	bin-to-graph\
 
 # C++ compiler
 CXX = mpic++

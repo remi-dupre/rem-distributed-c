@@ -22,8 +22,7 @@ void RemDistributed::sendGraph(std::istream& input)
 
     std::vector<std::stringstream> ss(nb_process);
 
-    size_t n;
-    input >> n;
+    size_t n = bin_readn(input);
 
     // Permutation of edges that regroups them
     size_t p = nb_process;
@@ -43,45 +42,48 @@ void RemDistributed::sendGraph(std::istream& input)
 
     // Send the graph size to everyone
     for (int i = 0 ; i < nb_process ; i++)
-        ss[i] << bin_format(n);
+        bin_write(n, ss[i]);
 
-    Edge edge;
-    while (input >> edge.first >> edge.second) {
+    while (!input.eof()) {
+        Edge edge = bin_reade(input);
+
+        // This node has already been read
+        if (input.eof())
+            break;
+
         // Transform edge indexes to regroup contiguous edges
         edge = std::make_pair(
             std::min(f(edge.first), f(edge.second)),
             std::max(f(edge.first), f(edge.second))
         );
-        ss[owner(edge.first)] << bin_format(edge);
+        bin_write(edge, ss[owner(edge.first)]);
 
         // Flush datas
-        if (ss[owner(edge.first)].tellg() >= trigger_launch || input.eof()) {
+        if (ss[owner(edge.first)].tellg() >= trigger_launch) {
             flush();
         }
     }
 
-    if (input.eof())
-        for (int i = 0 ; i < nb_process ; i++)
-            ss[i] << bin_format(n) << bin_format(n);
+    for (int i = 0 ; i < nb_process ; i++)
+        bin_write(Edge(n, n), ss[i]);
 
     flush();
 }
 
 void RemDistributed::loadGraph()
 {
-    size_t nb_vertices;
     std::stringstream data(otm_channel.receive());
-    data >> bin_format(nb_vertices);
+    size_t nb_vertices = bin_readn(data);
 
     internal_graph = Graph(nb_vertices);
     border_graph = Graph(nb_vertices);
 
     // Loops until we obtained the whole graph
     while (true) {
-        Edge edge;
-
-        while (data >> bin_format(edge))
+        while (!data.eof())
         {
+            Edge edge = bin_reade(data);
+
             if (edge.first == nb_vertices) {
                 assert(edge.second == nb_vertices);
                 return;

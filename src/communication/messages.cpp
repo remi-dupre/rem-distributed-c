@@ -28,80 +28,55 @@ std::ostream& operator<<(std::ostream& output, const Task& task)
     return output;
 }
 
-IntPrintBin bin_format(size_t& integer)
+void bin_write(const Graph& graph, std::ostream& output)
 {
-    return IntPrintBin(integer);
+    bin_write(graph.nb_vertices, output);
+
+    for (const Edge& edge: graph.edges)
+        bin_write(edge, output);
 }
 
-EdgePrintBin bin_format(Edge& edge)
+void bin_write(const Edge& edge, std::ostream& output)
 {
-    return EdgePrintBin(edge);
+    bin_write(edge.first, output);
+    bin_write(edge.second, output);
 }
 
-GraphPrintBin bin_format(Graph& graph)
+void bin_write(size_t node, std::ostream& output)
 {
-    return GraphPrintBin(graph);
+    const uint32_t node32 = node;
+    output.write(
+        reinterpret_cast<const char*>(&node32),
+        sizeof(uint32_t)
+    );
 }
 
-std::istream& operator>>(std::istream& input, IntPrintBin integerb)
+Graph bin_readg(std::istream& input)
 {
-    uint32_t integer;
+    Graph graph;
+    graph.nb_vertices = bin_readn(input);
 
-    input.read(reinterpret_cast<char*>(&integer), sizeof(uint32_t));
-    integerb.ref = integer;
+    while (!input.eof())
+    {
+        graph.edges.push_back(bin_reade(input));
 
-    return input;
-}
-
-std::istream& operator>>(std::istream& input, EdgePrintBin edgeb)
-{
-    input >> bin_format(edgeb.ref.first) >> bin_format(edgeb.ref.second);
-    return input;
-}
-
-std::istream& operator>>(std::istream& input, GraphPrintBin graphb)
-{
-    Graph& graph = graphb.ref;
-
-    input >> bin_format(graph.nb_vertices);
-    graph.edges.clear();
-
-    Edge edge;
-    while (true) {
-        input >> bin_format(edge);
-
-        if (edge.first == graph.nb_vertices || edge.second == graph.nb_vertices)
-            break;
-
-        graph.edges.push_back(edge);
+        if (input.eof())
+            graph.edges.pop_back();
     }
 
-    return input;
+    return graph;
 }
 
-std::ostream& operator<<(std::ostream& output, const IntPrintBin& integerb)
+Edge bin_reade(std::istream& input)
 {
-    uint32_t integer = integerb.ref;
-    output.write(reinterpret_cast<char*>(&integer), sizeof(uint32_t));
-    return output;
+    size_t x = bin_readn(input);
+    size_t y = bin_readn(input);
+    return std::make_pair(x, y);
 }
 
-std::ostream& operator<<(std::ostream& output, const EdgePrintBin& edgeb)
+size_t bin_readn(std::istream& input)
 {
-    Edge edge = edgeb.ref;
-    output << bin_format(edge.first) << bin_format(edge.second);
-    return output;
-}
-
-std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb)
-{
-    const Graph& graph = graphb.ref;
-    size_t n = graph.nb_vertices;
-    output << bin_format(n);
-
-    for (Edge edge: graph.edges)
-        output << bin_format(edge);
-
-    output << bin_format(n) << bin_format(n);
-    return output;
+    uint32_t node32;
+    input.read(reinterpret_cast<char*>(&node32), sizeof(uint32_t));
+    return node32;
 }

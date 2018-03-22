@@ -38,49 +38,15 @@ std::istream& operator>>(std::istream& input, Task& task);
 std::ostream& operator<<(std::ostream& output, const Task& task);
 
 /**
- * Manipulator struct for a graph we want to ouput in binary format.
+ * Write a graph/edge/node to a stream as a binary format.
  */
-struct GraphPrintBin
-{
-    Graph& ref;
-
-    GraphPrintBin(Graph& graph) :
-        ref(graph)
-    {}
-};
-
-struct IntPrintBin
-{
-    size_t& ref;
-
-    IntPrintBin(size_t& integer) :
-        ref(integer)
-    {}
-};
-
-struct EdgePrintBin
-{
-    Edge& ref;
-
-    EdgePrintBin(Edge& edge) :
-        ref(edge)
-    {}
-};
+void bin_write(const Graph& graph, std::ostream& output);
+void bin_write(const Edge& edge, std::ostream& output);
+void bin_write(size_t node, std::ostream& output);
 
 /**
- * Manipulator function, a graph called inside this function will be send and received to strings in a binary format.
- * Example: std::cout >> bin_format(graph);
+ * Read a graph/edge/node from a stream as a binary format.
  */
-IntPrintBin bin_format(size_t& integer);
-EdgePrintBin bin_format(Edge& edge);
-GraphPrintBin bin_format(Graph& graph);
-
-/**
- * Read/Write a graph to/from a string as binary.
- */
-std::istream& operator>>(std::istream& input, IntPrintBin integerb);
-std::istream& operator>>(std::istream& input, EdgePrintBin edgeb);
-std::istream& operator>>(std::istream& input, GraphPrintBin graphb);
-std::ostream& operator<<(std::ostream& output, const IntPrintBin& integerb);
-std::ostream& operator<<(std::ostream& output, const EdgePrintBin& edgeb);
-std::ostream& operator<<(std::ostream& output, const GraphPrintBin& graphb);
+Graph bin_readg(std::istream& input);
+Edge bin_reade(std::istream& input);
+size_t bin_readn(std::istream& input);
