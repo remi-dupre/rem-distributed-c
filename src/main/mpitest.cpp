@@ -4,6 +4,7 @@
 #include <mpi.h>
 
 #include "../spanningtree/rem_distributed.hpp"
+#include "../parameters.hpp"
 
 using namespace std::chrono;
 
@@ -30,8 +31,12 @@ int main(int argc, const char** argv) {
             return 1;
         }
 
+        // Allocate bigger buffers for the file
         std::ifstream file;
-        file.open(argv[1], std::ios::in);
+        char file_buffer[file_buff_size];
+        file.rdbuf()->pubsetbuf(file_buffer, file_buff_size);
+
+        file.open(argv[1], std::ios::in | std::ios::binary);
         rem_engine.sendGraph(file);
         file.close();
     }

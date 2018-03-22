@@ -8,13 +8,13 @@
 
 #include "../communication/messages.hpp"
 #include "../graph.hpp"
+#include "../parameters.hpp"
 
 
 int main(int argc, const char** argv)
 {
     std::ios::sync_with_stdio(false);
 
-    // Open files
     bool input_file = argc > 1;
 
     std::istream* input = &std::cin;
@@ -26,12 +26,20 @@ int main(int argc, const char** argv)
     std::ifstream in_file;
     std::ofstream out_file;
 
+    // Allocate bigger buffers for files
+    char in_buffer[file_buff_size];
+    char out_buffer[file_buff_size];
+
+    in_file.rdbuf()->pubsetbuf(in_buffer, file_buff_size);
+    out_file.rdbuf()->pubsetbuf(out_buffer, file_buff_size);
+
+    // Open files
     if (input_file) {
         in_filename = argv[1];
         out_filename = argc > 2 ? argv[2] : in_filename + ".bin";
 
-        in_file.open(in_filename.c_str());
-        out_file.open(out_filename.c_str());
+        in_file.open(in_filename.c_str(), std::ios::in);
+        out_file.open(out_filename.c_str(), std::ios::out | std::ios::binary | std::ios::trunc);
 
         input = &in_file;
         output = &out_file;
