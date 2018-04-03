@@ -14,7 +14,7 @@
 /**
  * An edge is a reference to two vertices, represented by their index.
  */
-typedef std::pair<size_t, size_t> Edge;
+typedef std::pair<uint32_t, uint32_t> Edge;
 
 /**
  * A graph is a number of vertices, and a list of its edges.

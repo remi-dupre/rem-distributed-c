@@ -48,6 +48,8 @@ int main(int argc, const char** argv)
         obuff << current_int;
     }
 
+    obuff.flush();
+
     // Close files
     if (input_file) {
         in_file.close();

@@ -1,5 +1,30 @@
 #include "messages.hpp"
 
+
+std::vector<char> Task::encode() const
+{
+    std::vector<char> encoded;
+    encoded.reserve(sizeof(uint32_t) * 3);
+
+    encoded.insert(
+        encoded.end(),
+        reinterpret_cast<const char*>(&r_x),
+        reinterpret_cast<const char*>(&r_x) + sizeof(uint32_t)
+    );
+    encoded.insert(
+        encoded.end(),
+        reinterpret_cast<const char*>(&r_y),
+        reinterpret_cast<const char*>(&r_y) + sizeof(uint32_t)
+    );
+    encoded.insert(
+        encoded.end(),
+        reinterpret_cast<const char*>(&p_r_y),
+        reinterpret_cast<const char*>(&p_r_y) + sizeof(uint32_t)
+    );
+
+    return encoded;
+}
+
 std::istream& operator>>(std::istream& input, Task& task)
 {
     uint32_t r_x, r_y, p_r_y;

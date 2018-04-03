@@ -17,7 +17,7 @@
  */
 struct Task
 {
-    size_t r_x, r_y, p_r_y;
+    uint32_t r_x, r_y, p_r_y;
 
     Task() = default;
 
@@ -28,6 +28,11 @@ struct Task
     Task(size_t x, size_t y, size_t p_y) :
         r_x(x), r_y(y), p_r_y(p_y)
     {}
+
+    /**
+     * Encode a task to its buffer format.
+     */
+    std::vector<char> encode() const;
 };
 
 /**

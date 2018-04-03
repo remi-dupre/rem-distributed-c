@@ -5,10 +5,9 @@ ManyToMany::ManyToMany(MPI_Comm communicator) :
     communicator(communicator)
 {}
 
-void ManyToMany::send(const std::vector<std::string>& data)
+void ManyToMany::send(const std::vector<std::vector<char>>& data)
 {
     // Calculate size informations
-    std::string sendbuf;
     std::vector<int> sendcounts;
     std::vector<int> senddispls;
 
@@ -18,12 +17,18 @@ void ManyToMany::send(const std::vector<std::string>& data)
     int cumul_send_size = 0;
     int cumul_recv_size = 0;
 
-    for (const std::string& proc_buff: data) {
+    for (const std::vector<char>& proc_buff: data) {
         senddispls.push_back(cumul_send_size);
         sendcounts.push_back(proc_buff.size());
-        sendbuf += proc_buff;
         cumul_send_size += proc_buff.size();
     }
+
+    // Create sent buffer
+    std::vector<char> sendbuf;
+    sendbuf.reserve(cumul_send_size);
+
+    for (const std::vector<char>& proc_buff: data)
+        sendbuf.insert(sendbuf.end(), proc_buff.begin(), proc_buff.end());
 
     MPI_Alltoall(
         sendcounts.data(), 1, MPI_INT,
@@ -46,8 +51,7 @@ void ManyToMany::send(const std::vector<std::string>& data)
     );
 }
 
-std::string ManyToMany::receive_merged()
+std::vector<char> ManyToMany::receive_merged()
 {
-    std::string ret = std::move(cached_buffer);
-    return ret;
+    return std::move(cached_buffer);
 }

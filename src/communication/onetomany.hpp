@@ -9,7 +9,6 @@
 #include <mpi.h>
 
 #include <cassert>
-#include <string>
 #include <vector>
 
 
@@ -27,13 +26,13 @@ public:
      * The datas are arranged in a vector, indexed by receiver's id.
      * All process must synchronize by calling "receive".
      */
-    void send(const std::vector<std::string>& data);
+    void send(const std::vector<std::vector<char>>& data);
 
     /**
      * Receive data for this process as a string.
      * Each process can only call this once.
      */
-    std::string receive();
+    std::vector<char> receive();
 
 private:
     // process sending datas
@@ -43,5 +42,5 @@ private:
     MPI_Comm communicator;
 
     // Buffer so that sending process can call `receive`
-    std::string source_buffer;
+    std::vector<char> source_buffer;
 };

@@ -35,6 +35,11 @@ public:
      */
     void write(char* data, int data_size);
 
+    /**
+     * Flush cached datas to parent stream.
+     */
+    void flush();
+
 private:
     // buffer to be outputed
     char buffer[MANUAL_BUFF_SIZE];

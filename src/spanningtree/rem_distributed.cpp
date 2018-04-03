@@ -18,11 +18,15 @@ void RemDistributed::sendGraph(std::istream& input)
     assert(process == source);
 
     // Send edges by chunks of this size
-    constexpr int trigger_launch = 32000;
+    constexpr int trigger_send = 32000;
 
-    std::vector<std::stringstream> ss(nb_process);
+    std::vector<std::vector<char>> buffers(nb_process);
     IStreamBuff ibuff(input);
 
+    for (int i = 0 ; i < nb_process ; i++)
+        buffers[i].reserve(trigger_send);
+
+    // Read the size of the graph
     uint32_t n;
     ibuff >> n;
 
@@ -32,60 +36,72 @@ void RemDistributed::sendGraph(std::istream& input)
         return (p * x) % (p * (n / p)) + (p * x) / n;
     };
 
-    // Flush datas
-    auto flush = [&ss, this] () -> void {
-        std::vector<std::string> data(nb_process);
-
-        for (int i = 0 ; i < nb_process ; i++)
-            data[i] = ss[i].str();
-
-        otm_channel.send(data);
-    };
-
     // Send the graph size to everyone
     for (int i = 0 ; i < nb_process ; i++)
-        bin_write(n, ss[i]);
+        buffers[i].insert(
+            buffers[i].end(),
+            reinterpret_cast<char*>(&n),
+            reinterpret_cast<char*>(&n) + sizeof(uint32_t)
+        );
 
-    while (!input.eof()) {
+    while (!ibuff.eof()) {
         uint32_t x, y;
         ibuff >> x >> y;
+
+        // Transform edge indexes to regroup contiguous edges
+        const Edge edge = std::make_pair(
+            std::min(f(x), f(y)),
+            std::max(f(x), f(y))
+        );
 
         // This node has already been read
         if (ibuff.eof())
             break;
 
-        // Transform edge indexes to regroup contiguous edges
-        Edge edge = std::make_pair(
-            std::min(f(x), f(y)),
-            std::max(f(x), f(y))
-        );
-        bin_write(edge, ss[owner(edge.first)]);
-
         // Flush datas
-        if (ss[owner(edge.first)].tellg() >= trigger_launch) {
-            flush();
+        if (buffers[owner(edge.first)].size() + sizeof(Edge) > trigger_send) {
+            otm_channel.send(buffers);
+
+            for (int i = 0 ; i < nb_process ; i++)
+                buffers[i].clear();
         }
+
+        buffers[owner(edge.first)].insert(
+            buffers[owner(edge.first)].end(),
+            reinterpret_cast<const char*>(&edge),
+            reinterpret_cast<const char*>(&edge) + sizeof(Edge)
+        );
     }
 
-    for (int i = 0 ; i < nb_process ; i++)
-        bin_write(Edge(n, n), ss[i]);
+    // Signal that this node is done sending data
+    for (int i = 0 ; i < nb_process ; i++) {
+        const Edge fake(n, n);
+        buffers[i].insert(
+            buffers[i].end(),
+            reinterpret_cast<const char*>(&fake),
+            reinterpret_cast<const char*>(&fake) + sizeof(Edge)
+        );
+    }
 
-    flush();
+    otm_channel.send(buffers);
 }
 
 void RemDistributed::loadGraph()
 {
-    std::stringstream data(otm_channel.receive());
-    size_t nb_vertices = bin_readn(data);
+    std::vector<char> data = otm_channel.receive();
+    size_t data_pos = sizeof(uint32_t);
+
+    size_t nb_vertices = *reinterpret_cast<uint32_t*>(&data[0]);
 
     internal_graph = Graph(nb_vertices);
     border_graph = Graph(nb_vertices);
 
     // Loops until we obtained the whole graph
     while (true) {
-        while (!data.eof())
+        while (data_pos < data.size())
         {
-            Edge edge = bin_reade(data);
+            Edge edge = *reinterpret_cast<Edge*>(&data[data_pos]);
+            data_pos += sizeof(Edge);
 
             if (edge.first == nb_vertices) {
                 assert(edge.second == nb_vertices);
@@ -100,8 +116,10 @@ void RemDistributed::loadGraph()
                 border_graph.edges.emplace_back(edge.second, edge.first);
         }
 
-        data.str(otm_channel.receive());
+        data = otm_channel.receive();
+        data_pos = 0;
     }
+    std::cout << "leaving loadGraph" << std::endl;
 }
 
 bool RemDistributed::nothingToDo() const
@@ -129,9 +147,9 @@ void RemDistributed::runTask(Task& task)
 {
     std::vector<size_t>& p = uf_parent;
 
-    size_t& r_x = task.r_x;
-    size_t& r_y = task.r_y;
-    size_t& p_r_y = task.p_r_y;
+    uint32_t& r_x = task.r_x;
+    uint32_t& r_y = task.r_y;
+    uint32_t& p_r_y = task.p_r_y;
 
     // Move to roots and update p[r_y]
     r_x = local_root(r_x);
@@ -187,19 +205,17 @@ void RemDistributed::dequeueTasks(int task_count)
 
 bool RemDistributed::spreadTasks()
 {
-    std::vector<std::string> buffers(nb_process);
+    std::vector<std::vector<char>> buffers(nb_process);
 
     // If there is nothing to do, give the information to everyone by creating
     //   fake tasks
     if (nothingToDo()) {
-        std::stringstream ss;
-        ss << Task(
-            internal_graph.nb_vertices,
-            internal_graph.nb_vertices
-        );
+        std::vector<char> message = Task(
+            internal_graph.nb_vertices, internal_graph.nb_vertices
+        ).encode();
 
         for (int i = 0 ; i < nb_process ; i++) {
-            buffers[i] = ss.str();
+            buffers[i] = message;
         }
     }
     else {
@@ -207,24 +223,28 @@ bool RemDistributed::spreadTasks()
             if (i == process)
                 continue;
 
-            std::stringstream ss;
+            std::vector<char> message;
+            message.reserve((1 + todo[i].size()) * 3 * sizeof(uint32_t));
 
             while (!todo[i].empty()) {
-                ss << todo[i].front();
+                std::vector<char> task = todo[i].front().encode();
+                message.insert(message.end(), task.begin(), task.end());
                 todo[i].pop();
             }
 
-            buffers[i] = ss.str();
+            buffers[i] = message;
         }
     }
 
     mtm_channel.send(buffers);
 
-    Task new_task;
-    std::stringstream incoming_data(mtm_channel.receive_merged());
+    // Sequentially read all tasks
+    std::vector<char> incoming_data = mtm_channel.receive_merged();
     int nb_fake_tasks = 0;
 
-    while (incoming_data >> new_task) {
+    for (size_t task = 0 ; task < incoming_data.size() ; task += 3 * sizeof(uint32_t)) {
+        Task new_task = *reinterpret_cast<Task*>(&incoming_data[task]);
+
         // Check for fake tasks
         if (new_task.r_x == internal_graph.nb_vertices) {
             assert(new_task.r_y == internal_graph.nb_vertices);

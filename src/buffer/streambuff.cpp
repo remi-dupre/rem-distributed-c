@@ -8,7 +8,7 @@ OStreamBuff::OStreamBuff(std::ostream& stream) :
 
 OStreamBuff::~OStreamBuff()
 {
-    stream.write(buffer, buffer_load);
+    flush();
 }
 
 void OStreamBuff::write(char* data, int data_size)
@@ -25,6 +25,12 @@ void OStreamBuff::write(char* data, int data_size)
         buffer_load = 0;
         write(data + part_size, data_size - part_size);
     }
+}
+
+void OStreamBuff::flush()
+{
+    stream.write(buffer, buffer_load);
+    buffer_load = 0;
 }
 
 IStreamBuff::IStreamBuff(std::istream& stream) :

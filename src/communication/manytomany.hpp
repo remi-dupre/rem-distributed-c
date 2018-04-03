@@ -8,7 +8,7 @@
 
 #include <mpi.h>
 
-#include <string>
+#include <sstream>
 #include <vector>
 
 
@@ -25,18 +25,18 @@ public:
      * The datas are arranged in a vector, indexed by receiver's id.
      * All process must synchronize by this method.
      */
-    void send(const std::vector<std::string>& data);
+    void send(const std::vector<std::vector<char>>& data);
 
     /**
      * Get cached datas from last communication, concatenates all incoming datas.
      * This method should only be called once.
      */
-    std::string receive_merged();
+    std::vector<char> receive_merged();
 
 private:
     // MPI communicator carrying datas
     MPI_Comm communicator;
 
     // Buffer to return in next receive
-    std::string cached_buffer;
+    std::vector<char> cached_buffer;
 };
