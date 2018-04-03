@@ -66,11 +66,9 @@ void RemDistributed::sendGraph(std::istream& input)
                 buffers[i].clear();
         }
 
-        buffers[owner(edge.first)].insert(
-            buffers[owner(edge.first)].end(),
-            reinterpret_cast<const char*>(&edge),
-            reinterpret_cast<const char*>(&edge) + sizeof(Edge)
-        );
+        // Copy the edge at the right place in the memory
+        buffers[owner(edge.first)].resize(buffers[owner(edge.first)].size() + sizeof(Edge));
+        *reinterpret_cast<Edge*>(&(*buffers[owner(edge.first)].end()) - sizeof(Edge)) = edge;
     }
 
     // Signal that this node is done sending data
