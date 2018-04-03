@@ -21,8 +21,10 @@ void RemDistributed::sendGraph(std::istream& input)
     constexpr int trigger_launch = 32000;
 
     std::vector<std::stringstream> ss(nb_process);
+    IStreamBuff ibuff(input);
 
-    size_t n = bin_readn(input);
+    uint32_t n;
+    ibuff >> n;
 
     // Permutation of edges that regroups them
     size_t p = nb_process;
@@ -45,16 +47,17 @@ void RemDistributed::sendGraph(std::istream& input)
         bin_write(n, ss[i]);
 
     while (!input.eof()) {
-        Edge edge = bin_reade(input);
+        uint32_t x, y;
+        ibuff >> x >> y;
 
         // This node has already been read
-        if (input.eof())
+        if (ibuff.eof())
             break;
 
         // Transform edge indexes to regroup contiguous edges
-        edge = std::make_pair(
-            std::min(f(edge.first), f(edge.second)),
-            std::max(f(edge.first), f(edge.second))
+        Edge edge = std::make_pair(
+            std::min(f(x), f(y)),
+            std::max(f(x), f(y))
         );
         bin_write(edge, ss[owner(edge.first)]);
 

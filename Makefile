@@ -48,7 +48,6 @@ clean-all:
 
 # Compile different programs
 $(TARGETS): %: $(OBJ) $(BUILD_DIR)/main/%.o
-	echo $(SRC)
 	$(CXX) -o $@ $^ $(DFLAGS) $(LFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp

@@ -31,11 +31,7 @@ int main(int argc, const char** argv) {
             return 1;
         }
 
-        // Allocate bigger buffers for the file
         std::ifstream file;
-        char file_buffer[file_buff_size];
-        file.rdbuf()->pubsetbuf(file_buffer, file_buff_size);
-
         file.open(argv[1], std::ios::in | std::ios::binary);
         rem_engine.sendGraph(file);
         file.close();

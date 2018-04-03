@@ -9,6 +9,7 @@
 
 #include "../communication/messages.hpp"
 #include "../graph.hpp"
+#include "../buffer/streambuff.hpp"
 #include "../parameters.hpp"
 
 
@@ -27,13 +28,6 @@ int main(int argc, char** argv)
     std::ifstream in_file;
     std::ofstream out_file;
 
-    // Allocate bigger buffers for files
-    char in_buffer[file_buff_size];
-    char out_buffer[file_buff_size];
-
-    in_file.rdbuf()->pubsetbuf(in_buffer, file_buff_size);
-    out_file.rdbuf()->pubsetbuf(out_buffer, file_buff_size);
-
     // Open files
     if (input_file) {
         in_filename = argv[1];
@@ -46,16 +40,17 @@ int main(int argc, char** argv)
         output = &out_file;
     }
 
+    IStreamBuff ibuff(*input);
+
     // Transfer datas
     size_t n = bin_readn(*input);
     *output << n << '\n';
 
     while (true) {
-        size_t x = bin_readn(*input);
-        size_t y = bin_readn(*input);
+        uint32_t x, y;
+        ibuff >> x >> y;
 
-        if (input->
-            eof())
+        if (ibuff.eof())
             break;
 
         *output << x << ' ' << y << '\n';

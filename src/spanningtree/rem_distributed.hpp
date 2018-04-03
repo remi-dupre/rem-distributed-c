@@ -16,6 +16,7 @@
 #include "../communication/manytomany.hpp"
 #include "../communication/messages.hpp"
 #include "../graph.hpp"
+#include "../buffer/streambuff.hpp"
 #include "../tools.hpp"
 #include "rem.hpp"
 
