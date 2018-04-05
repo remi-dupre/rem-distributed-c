@@ -32,7 +32,7 @@ void ManyToOne::send(const std::vector<char>& data)
         source_buffer.resize(total_size);
 
     MPI_Gatherv(
-        data.data(), data.size(), MPI_CHAR,
+        const_cast<char*>(data.data()), data.size(), MPI_CHAR,
         source_buffer.data(), data_sizes.data(), displs.data(), MPI_CHAR,
         source, communicator
     );
