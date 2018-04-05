@@ -21,3 +21,9 @@ infos
 bin-to-graph
 graph-to-bin
 mpitest
+
+# Latex compilation files
+documentation/*.aux
+documentation/*.log
+documentation/*.pdf
+documentation/*.synctex.gz
