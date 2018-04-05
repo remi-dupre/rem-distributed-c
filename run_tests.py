@@ -12,7 +12,7 @@ BIN_GEN = "./generate"
 BIN_CONV = "./graph-to-bin"
 
 # Generate some extra random graphs
-NB_RANDOM = 100
+NB_RANDOM = 1
 RANDOM_NB_NODES = 10000
 RANDOM_NB_EDGES = 25000
 
