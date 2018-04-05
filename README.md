@@ -1,4 +1,4 @@
-REM Distributed
+REM Distributed [![Build Status](https://travis-ci.org/remi-dupre/rem-distributed.svg?branch=master)](https://travis-ci.org/remi-dupre/rem-distributed)
 ===============
 Implementation of a distributed version of REM's algorithm to process spanning forests.
 
