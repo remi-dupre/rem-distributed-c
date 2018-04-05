@@ -33,7 +33,10 @@ void RemDistributed::sendGraph(std::istream& input)
     // Permutation of edges that regroups them
     size_t p = nb_process;
     auto f = [n, p] (size_t x) -> size_t {
-        return (p * x) % (p * (n / p)) + (p * x) / n;
+        return x;
+        size_t z1 = x * p;
+        size_t z2 = p * ((n + p - 1) / p);
+        return (z1 / z2) + (z1 % z2);
     };
 
     // Send the graph size to everyone
@@ -49,14 +52,16 @@ void RemDistributed::sendGraph(std::istream& input)
         ibuff >> x >> y;
 
         // Transform edge indexes to regroup contiguous edges
+        assert(f(x) < n);
+        assert(f(y) < n);
         const Edge edge = std::make_pair(
             std::min(f(x), f(y)),
             std::max(f(x), f(y))
         );
 
         // This node has already been read
-        if (ibuff.eof())
-            break;
+        // if (ibuff.eof())
+        //     break;
 
         // Flush datas
         if (buffers[owner(edge.first)].size() + sizeof(Edge) > trigger_send) {
@@ -208,12 +213,10 @@ bool RemDistributed::spreadTasks()
     // If there is nothing to do, give the information to everyone by creating
     //   fake tasks
     if (nothingToDo()) {
-        std::vector<char> message = Task(
-            internal_graph.nb_vertices, internal_graph.nb_vertices
-        ).encode();
-
         for (int i = 0 ; i < nb_process ; i++) {
-            buffers[i] = message;
+            buffers[i] = Task(
+                internal_graph.nb_vertices, internal_graph.nb_vertices
+            ).encode();
         }
     }
     else {
@@ -295,4 +298,21 @@ void RemDistributed::debug() const
     // for (size_t i = process ; i < internal_graph.nb_vertices ; i += nb_process) {
     //     std::cout << " - " << i << " -> " << uf_parent[i] << std::endl;
     // }
+}
+
+void RemDistributed::showStructure() const
+{
+    // Process the initial index of a node
+    const size_t& n = internal_graph.nb_vertices;
+    const size_t& p = nb_process;
+    auto g = [n, p] (size_t x) -> size_t {
+        return x;
+        return (x % p) * ((n + p - 1) / p) + (x / p);
+    };
+
+    for (size_t x = 0 ; x < n ; x++) {
+        if (owner(x) == process && uf_parent[x] != x)
+            // std::cout << process << ": \e[1m" << g(x) << "\e[0m -> " << g(uf_parent[x]) << std::endl;
+            std::cout << x << ' ' << uf_parent[x] << std::endl;
+    }
 }

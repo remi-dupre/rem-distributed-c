@@ -46,12 +46,12 @@ int main(int argc, char** argv)
     size_t n = bin_readn(*input);
     *output << n << '\n';
 
-    while (true) {
+    while (!ibuff.eof()) {
         uint32_t x, y;
         ibuff >> x >> y;
 
-        if (ibuff.eof())
-            break;
+        // if (ibuff.eof())
+        //     break;
 
         *output << x << ' ' << y << '\n';
     }

@@ -92,6 +92,13 @@ public:
      */
     void debug() const;
 
+    /**
+     * Display the disjoint set structure of this process.
+     * The display format is the usual one: each line represent a node.
+     * A node is represented by the indexes of its two edges.
+     */
+    void showStructure() const;
+
 private:
     // current process
     int process;

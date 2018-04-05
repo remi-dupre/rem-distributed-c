@@ -55,8 +55,11 @@ std::istream& operator>>(std::istream& input, Graph& graph)
     graph.edges.clear();
 
     size_t x, y;
-    while (input >> x >> y)
+    while (input >> x >> y) {
+        assert(x < n);
+        assert(y < n);
         graph.edges.emplace_back(std::min(x, y), std::max(x, y));
+    }
 
     return input;
 }

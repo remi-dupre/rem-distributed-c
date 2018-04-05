@@ -32,7 +32,6 @@ public:
      * This method should only be called once.
      */
     std::vector<char> receive_merged();
-
 private:
     // MPI communicator carrying datas
     MPI_Comm communicator;

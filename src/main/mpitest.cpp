@@ -10,8 +10,6 @@ using namespace std::chrono;
 
 
 int main(int argc, const char** argv) {
-    std::ios::sync_with_stdio(false);
-
     MPI_Init(nullptr, nullptr);
 
     int time_start = duration_cast< milliseconds >(
@@ -52,17 +50,18 @@ int main(int argc, const char** argv) {
     do {
         rem_engine.dequeueTasks();
     } while (rem_engine.spreadTasks());
-    std::cout << "---------- " << process << " ----------" << std::endl;
-    rem_engine.debug();
-
-    int time_process = duration_cast< milliseconds >(
-        system_clock::now().time_since_epoch()
-    ).count();
-
-    std::cout << std::endl;
-    std::cout << "Time to read file: " << time_read - time_start << "ms" << std::endl;
-    std::cout << "Time to load graph: " << time_load - time_read << "ms" << std::endl;
-    std::cout << "Time processing: " << time_process - time_load << "ms" << std::endl;
+    // std::cout << "---------- " << process << " ----------" << std::endl;
+    // rem_engine.debug();
+    rem_engine.showStructure();
+    //
+    // int time_process = duration_cast< milliseconds >(
+    //     system_clock::now().time_since_epoch()
+    // ).count();
+    //
+    // std::cout << std::endl;
+    // std::cout << "Time to read file: " << time_read - time_start << "ms" << std::endl;
+    // std::cout << "Time to load graph: " << time_load - time_read << "ms" << std::endl;
+    // std::cout << "Time processing: " << time_process - time_load << "ms" << std::endl;
 
     MPI_Finalize();
 }
