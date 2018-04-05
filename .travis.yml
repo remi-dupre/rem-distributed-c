@@ -1,0 +1,9 @@
+addons:
+  apt:
+    packages:
+     - openmpi-bin
+     - libopenmpi-dev
+
+install: make debug
+
+script: python3 run_tests.py
