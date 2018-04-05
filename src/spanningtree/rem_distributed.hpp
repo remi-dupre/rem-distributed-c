@@ -46,6 +46,11 @@ public:
     void loadGraph();
 
     /**
+     * Give the number of vertices in the graph.
+     */
+    size_t nb_vertices() const;
+
+    /**
      * Checks wether there is at least a task to process are send.
      */
     bool nothingToDo() const;
@@ -97,7 +102,7 @@ public:
      * The display format is the usual one: each line represent a node.
      * A node is represented by the indexes of its two edges.
      */
-    void showStructure() const;
+    std::string showStructure() const;
 
 private:
     // current process

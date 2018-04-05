@@ -2,7 +2,9 @@
 build
 
 # Test outputs
-outputs
+inputs/random_*
+inputs/*.bin
+inputs/*.out
 
 # Binary inputs
 inputs/*.bin

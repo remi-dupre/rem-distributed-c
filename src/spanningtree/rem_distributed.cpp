@@ -125,6 +125,11 @@ void RemDistributed::loadGraph()
     std::cout << "leaving loadGraph" << std::endl;
 }
 
+size_t RemDistributed::nb_vertices() const
+{
+    return internal_graph.nb_vertices;
+}
+
 bool RemDistributed::nothingToDo() const
 {
     for (const std::queue<Task>& task_list : todo)
@@ -300,8 +305,10 @@ void RemDistributed::debug() const
     // }
 }
 
-void RemDistributed::showStructure() const
+std::string RemDistributed::showStructure() const
 {
+    std::stringstream ss;
+
     // Process the initial index of a node
     const size_t& n = internal_graph.nb_vertices;
     const size_t& p = nb_process;
@@ -313,6 +320,8 @@ void RemDistributed::showStructure() const
     for (size_t x = 0 ; x < n ; x++) {
         if (owner(x) == process && uf_parent[x] != x)
             // std::cout << process << ": \e[1m" << g(x) << "\e[0m -> " << g(uf_parent[x]) << std::endl;
-            std::cout << x << ' ' << uf_parent[x] << std::endl;
+            ss << x << ' ' << uf_parent[x] << '\n';
     }
+
+    return ss.str();
 }

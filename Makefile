@@ -45,6 +45,9 @@ clean:
 clean-all:
 	rm $(TARGETS)
 	rm -r $(BUILD_DIR)
+	rm inputs/random_*
+	rm inputs/*.bin
+	rm inputs/*.out
 
 # Compile different programs
 $(TARGETS): %: $(OBJ) $(BUILD_DIR)/main/%.o

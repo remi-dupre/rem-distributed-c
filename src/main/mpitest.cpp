@@ -3,6 +3,7 @@
 #include <iostream>
 #include <mpi.h>
 
+#include "../communication/manytoone.hpp"
 #include "../spanningtree/rem_distributed.hpp"
 #include "../parameters.hpp"
 
@@ -52,7 +53,7 @@ int main(int argc, const char** argv) {
     } while (rem_engine.spreadTasks());
     // std::cout << "---------- " << process << " ----------" << std::endl;
     // rem_engine.debug();
-    rem_engine.showStructure();
+
     //
     // int time_process = duration_cast< milliseconds >(
     //     system_clock::now().time_since_epoch()
@@ -62,6 +63,20 @@ int main(int argc, const char** argv) {
     // std::cout << "Time to read file: " << time_read - time_start << "ms" << std::endl;
     // std::cout << "Time to load graph: " << time_load - time_read << "ms" << std::endl;
     // std::cout << "Time processing: " << time_process - time_load << "ms" << std::endl;
+
+
+    // Prompt structure
+
+    ManyToOne channel(0, MPI_COMM_WORLD);
+
+    std::string message = rem_engine.showStructure();
+    channel.send(std::vector<char>(message.begin(), message.end()));
+
+    if (process == 0) {
+        std::vector<char> received = channel.receive_merged();
+        std::cout << rem_engine.nb_vertices() << std::endl;
+        std::cout << std::string(received.begin(), received.end());
+    }
 
     MPI_Finalize();
 }
