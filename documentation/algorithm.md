@@ -1,5 +1,6 @@
 Description of distributed REM algorithm
 ========================================
+[![Build Status](https://travis-ci.org/remi-dupre/rem-distributed.svg?branch=master)](https://travis-ci.org/remi-dupre/rem-distributed)
 
 Edge request
 ------------
