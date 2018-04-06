@@ -239,8 +239,6 @@ bool RemDistributed::spreadTasks()
         // Check for fake tasks
         if (new_task.r_x == internal_graph.nb_vertices) {
             assert(new_task.r_y == internal_graph.nb_vertices);
-            assert(new_task.p_r_y == internal_graph.nb_vertices);
-
             nb_fake_tasks++;
             continue;
         }
