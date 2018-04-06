@@ -22,6 +22,7 @@ spanning_forest
 infos
 bin-to-graph
 graph-to-bin
+mtx-to-bin
 mpitest
 
 # Latex compilation files

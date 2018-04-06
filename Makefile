@@ -7,6 +7,7 @@ TARGETS =\
 	mpitest\
 	graph-to-bin\
 	bin-to-graph\
+	mtx-to-bin\
 
 # C++ compiler
 CXX = mpic++
