@@ -157,46 +157,27 @@ void RemDistributed::runTask(Task& task)
 
     uint32_t& r_x = task.r_x;
     uint32_t& r_y = task.r_y;
-    uint32_t& p_r_y = task.p_r_y;
+
+    assert(owner(r_x) == process);
 
     // Move to roots and update p[r_y]
     r_x = local_root(r_x);
 
-    if (owner(r_y) == process) {
-        r_y = local_root(r_y);
-        p_r_y = p[r_y];
-    }
-    else {
-        p[r_y] = p_r_y;
-    }
-
-    // Basic cases
-    if (p[r_x] == p[r_y]) {
-        return;
-    }
-    if (p[r_x] == r_y) {
-        p[r_x] = p[r_y];
-        return;
-    }
-    if (r_x == p[r_y]) {
-        p[r_y] = p[r_x];
-        return;
-    }
 
     // Try to move on the tree
-    if (p[r_x] < p[r_y]) {
+    if (p[r_x] < r_y) {
         if (r_x == p[r_x]) {
             // AN EDGE CAN BE KEPT
-            p[r_x] = p[r_y];
+            p[r_x] = r_y;
         }
         else {
             size_t z = p[r_x];
-            p[r_x] = p[r_y];
-            todo[owner(z)].emplace(z, r_y, p[r_y]);
+            p[r_x] = r_y;
+            todo[owner(z)].emplace(z, r_y);
         }
     }
-    else {
-        todo[owner(p[r_y])].emplace(p[r_y], r_x, p[r_x]);
+    else if (p[r_x] > r_y) {
+        todo[owner(r_y)].emplace(r_y, p[r_x]);
     }
 }
 
@@ -230,11 +211,15 @@ bool RemDistributed::spreadTasks()
                 continue;
 
             std::vector<char> message;
-            message.reserve((1 + todo[i].size()) * 3 * sizeof(uint32_t));
+            message.reserve((1 + todo[i].size()) * sizeof(Task));
 
             while (!todo[i].empty()) {
-                std::vector<char> task = todo[i].front().encode();
-                message.insert(message.end(), task.begin(), task.end());
+                Task& task = todo[i].front();
+                message.insert(
+                    message.end(),
+                    reinterpret_cast<char*>(&task),
+                    reinterpret_cast<char*>(&task) + sizeof(Task)
+                );
                 todo[i].pop();
             }
 
@@ -248,7 +233,7 @@ bool RemDistributed::spreadTasks()
     std::vector<char> incoming_data = mtm_channel.receive_merged();
     int nb_fake_tasks = 0;
 
-    for (size_t task = 0 ; task < incoming_data.size() ; task += 3 * sizeof(uint32_t)) {
+    for (size_t task = 0 ; task < incoming_data.size() ; task += sizeof(Task)) {
         Task new_task = *reinterpret_cast<Task*>(&incoming_data[task]);
 
         // Check for fake tasks

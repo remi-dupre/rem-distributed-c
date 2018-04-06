@@ -13,20 +13,15 @@
 /**
  * Represent a task of the algorithm.
  * This task contains an edge (r_x, r_y) that we need to put in same component.
- * It can also contain p[r_y], if it is not known, we should make it be r_y
  */
 struct Task
 {
-    uint32_t r_x, r_y, p_r_y;
+    uint32_t r_x, r_y;
 
     Task() = default;
 
     Task(size_t x, size_t y) :
-        r_x(x), r_y(y), p_r_y(y)
-    {}
-
-    Task(size_t x, size_t y, size_t p_y) :
-        r_x(x), r_y(y), p_r_y(p_y)
+        r_x(x), r_y(y)
     {}
 
     /**

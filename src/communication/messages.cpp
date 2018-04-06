@@ -16,39 +16,22 @@ std::vector<char> Task::encode() const
         reinterpret_cast<const char*>(&r_y),
         reinterpret_cast<const char*>(&r_y) + sizeof(uint32_t)
     );
-    encoded.insert(
-        encoded.end(),
-        reinterpret_cast<const char*>(&p_r_y),
-        reinterpret_cast<const char*>(&p_r_y) + sizeof(uint32_t)
-    );
 
     return encoded;
 }
 
 std::istream& operator>>(std::istream& input, Task& task)
 {
-    uint32_t r_x, r_y, p_r_y;
-
-    input.read(reinterpret_cast<char*>(&r_x), sizeof(uint32_t));
-    input.read(reinterpret_cast<char*>(&r_y), sizeof(uint32_t));
-    input.read(reinterpret_cast<char*>(&p_r_y), sizeof(uint32_t));
-
-    task.r_x = r_x;
-    task.r_y = r_y;
-    task.p_r_y = p_r_y;
+    input.read(reinterpret_cast<char*>(&task.r_x), sizeof(uint32_t));
+    input.read(reinterpret_cast<char*>(&task.r_y), sizeof(uint32_t));
 
     return input;
 }
 
 std::ostream& operator<<(std::ostream& output, const Task& task)
 {
-    uint32_t r_x = task.r_x;
-    uint32_t r_y = task.r_y;
-    uint32_t p_r_y = task.p_r_y;
-
-    output.write(reinterpret_cast<char*>(&r_x), sizeof(uint32_t));
-    output.write(reinterpret_cast<char*>(&r_y), sizeof(uint32_t));
-    output.write(reinterpret_cast<char*>(&p_r_y), sizeof(uint32_t));
+    output.write(reinterpret_cast<const char*>(&task.r_x), sizeof(uint32_t));
+    output.write(reinterpret_cast<const char*>(&task.r_y), sizeof(uint32_t));
 
     return output;
 }
