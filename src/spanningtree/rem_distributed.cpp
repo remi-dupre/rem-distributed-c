@@ -32,11 +32,10 @@ void RemDistributed::sendGraph(std::istream& input)
 
     // Permutation of edges that regroups them
     size_t p = nb_process;
-    auto f = [n, p] (size_t x) -> size_t {
-        return x;
-        size_t z1 = x * p;
-        size_t z2 = p * ((n + p - 1) / p);
-        return (z1 / z2) + (z1 % z2);
+    auto f = [n] (size_t x) -> size_t {
+        // biggest prime less than 2**32
+        const uint64_t prime = 4294967291;
+        return (static_cast<uint64_t>(x) * prime) % n;
     };
 
     // Send the graph size to everyone
@@ -295,15 +294,20 @@ std::string RemDistributed::showStructure() const
     // Process the initial index of a node
     const size_t& n = internal_graph.nb_vertices;
     const size_t& p = nb_process;
-    auto g = [n, p] (size_t x) -> size_t {
-        return x;
-        return (x % p) * ((n + p - 1) / p) + (x / p);
+    auto f = [n] (size_t x) -> size_t {
+        // biggest prime less than 2**32
+        const uint64_t prime = 4294967291;
+        return (static_cast<uint64_t>(x) * prime) % n;
     };
+
+    std::vector<size_t> g(n); // reciproc of f
+    for (size_t i = 0 ; i < n ; i++)
+        g[f(i)] = i;
 
     for (size_t x = 0 ; x < n ; x++) {
         if (owner(x) == process && uf_parent[x] != x)
             // std::cout << process << ": \e[1m" << g(x) << "\e[0m -> " << g(uf_parent[x]) << std::endl;
-            ss << x << ' ' << uf_parent[x] << '\n';
+            ss << g[x] << ' ' << g[uf_parent[x]] << '\n';
     }
 
     return ss.str();
