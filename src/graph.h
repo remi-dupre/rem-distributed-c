@@ -39,9 +39,19 @@ typedef struct Graph
 Graph* new_empty_graph(int nb_vertices);
 
 /**
+ * Indicate that a graph will need at least some space.
+ */
+void reserve(Graph* graph, int min_size);
+
+/**
  * Insert a new edge to an existing graph.
  */
 void insert_edge(Graph* graph, uint32_t x, uint32_t y);
+
+/**
+ * Insert a list of edges to an existing graph.
+ */
+void insert_edges(Graph* graph, const Edge* edges, int nb_edges);
 
 /**
  * Read a graph from an ascii representation:

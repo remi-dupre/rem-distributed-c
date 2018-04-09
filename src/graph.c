@@ -10,11 +10,11 @@ Graph* new_empty_graph(int nb_vertices)
     return graph;
 }
 
-void insert_edge(Graph* graph, uint32_t x, uint32_t y)
+void reserve(Graph* graph, int min_size)
 {
-    // allocate more space
-    if (graph->nb_edges == graph->container_size) {
-        graph->container_size = 2 * graph->container_size + 1;
+    if (min_size > graph->container_size) {
+        while (min_size > graph->container_size)
+            graph->container_size = 2 * graph->container_size + 1;
 
         // create new container
         Edge* new_container = malloc(graph->container_size * sizeof(Edge));
@@ -24,10 +24,25 @@ void insert_edge(Graph* graph, uint32_t x, uint32_t y)
         free(graph->edges);
         graph->edges = new_container;
     }
+}
+
+void insert_edge(Graph* graph, uint32_t x, uint32_t y)
+{
+    // allocate more space
+    reserve(graph, graph->nb_edges + 1);
 
     graph->edges[graph->nb_edges].x = x;
     graph->edges[graph->nb_edges].y = y;
     graph->nb_edges++;
+}
+
+void insert_edges(Graph* graph, const Edge* edges, int nb_edges)
+{
+    // allocate more space
+    reserve(graph, graph->nb_edges + nb_edges);
+
+    memcpy(&graph->edges[graph->nb_edges], edges, nb_edges);
+    graph->nb_edges += nb_edges;
 }
 
 Graph* read_as_ascii(FILE* file)
