@@ -20,5 +20,7 @@ int main() {
     else
         recv_graph(context);
 
+    debug_context(context);
+
     MPI_Finalize();
 }

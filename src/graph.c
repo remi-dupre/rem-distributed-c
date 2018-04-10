@@ -28,6 +28,9 @@ void reserve(Graph* graph, int min_size)
 
 void insert_edge(Graph* graph, uint32_t x, uint32_t y)
 {
+    assert(x < graph->nb_vertices);
+    assert(y < graph->nb_vertices);
+
     // allocate more space
     reserve(graph, graph->nb_edges + 1);
 

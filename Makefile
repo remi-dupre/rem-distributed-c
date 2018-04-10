@@ -27,7 +27,7 @@ OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 # Main targets
 .PHONY: all release debug clean clean-all
 
-all: release
+all: debug
 
 debug: DFLAGS += -ggdb
 debug: $(TARGETS)

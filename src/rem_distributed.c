@@ -9,7 +9,27 @@ RemContext* new_context()
     MPI_Comm_rank(context->communicator, &context->process);
     MPI_Comm_size(context->communicator, &context->nb_process);
 
+    context->nb_vertices = 0;
+    context->uf_parent = malloc(0);
+    context->border_graph = new_empty_graph(0);
+
     return context;
+}
+
+void change_nb_vertices(RemContext* context, int nb_vertices)
+{
+    assert(context->uf_parent != NULL);
+    assert(context->border_graph != NULL);
+
+    context->nb_vertices = nb_vertices;
+
+    free(context->uf_parent);
+    free(context->border_graph);
+    context->uf_parent = malloc(nb_vertices * sizeof(uint32_t));
+    context->border_graph = new_empty_graph(nb_vertices);
+
+    for (int i = 0 ; i < nb_vertices ; i++)
+        context->uf_parent[i] = i;
 }
 
 void send_graph(FILE* file, RemContext* context)
@@ -31,10 +51,7 @@ void send_graph(FILE* file, RemContext* context)
     fread(&nb_edges, sizeof(uint32_t), 1, file);
 
     // Send the number of nodes to everyone
-    assert(context->process != 0);
-
-    // Receive graph's total number of nodes
-    context->nb_vertices = nb_nodes;
+    change_nb_vertices(context, nb_nodes);
     MPI_Bcast(
         &context->nb_vertices, 1, MPI_INT,
         0, context->communicator
@@ -46,12 +63,11 @@ void send_graph(FILE* file, RemContext* context)
 
 
     for (uint i = 0 ; i < nb_edges ; i++) {
-        int owner = owning_process(context, edges[i].x);
-
         // Add datas to buffer
-        int buff_pos = buffer_disp[owner] + buffer_load[owner];
+        int edge_owner = owner(edges[i].x);
+        int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
         memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
-        buffer_load[owner] += sizeof(Edge);
+        buffer_load[edge_owner] += sizeof(Edge);
 
         // If the last edge is reached, add fake edge to send to everyone
         if (i + 1 == nb_edges) {
@@ -66,8 +82,8 @@ void send_graph(FILE* file, RemContext* context)
             }
         }
 
-        assert(buffer_load[owner] <= MAX_COM_SIZE);
-        if (buffer_load[owner] + 2*sizeof(Edge) > MAX_COM_SIZE || i + 1  == nb_edges) {
+        assert(buffer_load[edge_owner] <= MAX_COM_SIZE);
+        if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || i + 1  == nb_edges) {
             // Send buffer sizes
             int my_size;
             MPI_Scatter(
@@ -105,6 +121,7 @@ void recv_graph(RemContext* context)
         &context->nb_vertices, 1, MPI_INT,
         0, context->communicator
     );
+    change_nb_vertices(context, context->nb_vertices);
 
     // Receive all edges
     bool finished = false;
@@ -138,13 +155,55 @@ void recv_graph(RemContext* context)
 
 bool register_edge(Edge edge, RemContext* context)
 {
-    printf(
-        "%d: (%u, %u)\n",
-        context->process,
-        edge.x, edge.y
-    );
+    if (edge.x == context->nb_vertices) {
+        // We received a fake edge
+        assert(edge.y == context->nb_vertices);
+        return false;
+    }
+    assert(owner(edge.x) == context->process || owner(edge.y) == context->process);
 
-    return edge.x != context->nb_vertices || edge.y != context->nb_vertices;
-    // CHECK OWNERSHIP
-    // IF INSIDE, EXECUTE SAMER
+    if (owner(edge.x) == context->process && owner(edge.y) == context->process) {
+        // We own this edge, insert it via rem's algorithm
+        #define p(x) context->uf_parent[x]
+
+        while (p(edge.x) != p(edge.y)) {
+            if (p(edge.x) < p(edge.y)) {
+                if (p(edge.y) == edge.y)
+                    p(edge.y) = p(edge.x);
+
+                uint32_t save_p_y = p(edge.y);
+                p(edge.y) = p(edge.x);
+                edge.y = save_p_y;
+            }
+            else {
+                if (p(edge.x) == edge.x)
+                    p(edge.x) = p(edge.y);
+
+                uint32_t save_p_x = p(edge.x);
+                p(edge.x) = p(edge.y);
+                edge.x = save_p_x;
+            }
+        }
+
+        #undef p
+    }
+    else {
+        // This edge is in the border, we just need to keep it for later
+        insert_edge(context->border_graph, edge.x, edge.y);
+    }
+
+    return true;
+}
+
+void debug_context(const RemContext* context)
+{
+    printf("## Process %d\n", context->process);
+
+    if (context->border_graph == NULL)
+        printf("# Border graph has been flushed.\n");
+    else
+        printf("# Border graph contains %d edges.\n", context->border_graph->nb_edges);
+
+    for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
+        printf("# (%u, %u)\n", context->border_graph->edges[i].x, context->border_graph->edges[i].y);
 }
