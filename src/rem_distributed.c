@@ -255,6 +255,65 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
+void debug_structure(const RemContext* context)
+{
+    // Collect the list of nodes owned by this process
+    int my_size = 0;
+    for (int i = 0 ; i < context->nb_vertices ; i++)
+        if (owner(i) == context->process)
+            my_size += sizeof(Edge);
+
+    Edge* edges = malloc(my_size * sizeof(Edge));
+    int edge_pos = 0;
+    for (int i = 0 ; i < context->nb_vertices ; i++) {
+        if (owner(i) == context->process) {
+            edges[edge_pos].x = i;
+            edges[edge_pos].y = context->uf_parent[i];
+            edge_pos++;
+        }
+    }
+    assert(edge_pos * sizeof(Edge) == my_size);
+
+    // Collect size from all process
+    int* sizes = malloc(context->nb_process * sizeof(int));
+    int* displ = malloc(context->nb_process * sizeof(int));
+
+    MPI_Gather(
+        &my_size, 1, MPI_INT,
+        sizes, 1, MPI_INT,
+        0, context->communicator
+    );
+
+    int total_size = 0;
+    if (context->process == 0) {
+        for (int p = 0 ; p < context->nb_process ; p++) {
+            displ[p] = total_size;
+            total_size += sizes[p];
+        }
+    }
+    else {
+        for (int p = 0 ; p < context->nb_process ; p++)
+            displ[p] = sizes[p] = 0;
+    }
+
+    // Collect the list of edges
+    Edge* all_edges = malloc(total_size);
+    MPI_Gatherv(
+        edges, my_size, MPI_CHAR,
+        all_edges, sizes, displ, MPI_CHAR,
+        0, context->communicator
+    );
+
+    // Display edges
+    if (context->process == 0)
+        for (int i = 0 ; i < total_size / sizeof(Edge) ; i++)
+            printf("%u %u\n", all_edges[i].x, all_edges[i].y);
+
+    free(edges);
+    free(sizes);
+    free(displ);
+}
+
 void debug_context(const RemContext* context)
 {
     printf("## Process %d\n", context->process);

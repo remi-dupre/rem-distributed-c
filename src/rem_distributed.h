@@ -64,6 +64,11 @@ bool register_edge(Edge edge, RemContext* context);
 void filter_border(RemContext* context);
 
 /**
+ * Display the disjoint set structure of all process.
+ */
+void debug_structure(const RemContext* context);
+
+/**
  * Display some general informations about the context.
  */
 void debug_context(const RemContext* context);

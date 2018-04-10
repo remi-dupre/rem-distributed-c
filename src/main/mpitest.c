@@ -21,7 +21,7 @@ int main() {
         recv_graph(context);
 
     // filter_border(context);
-    debug_context(context);
+    debug_structure(context);
 
     MPI_Finalize();
 }
