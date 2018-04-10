@@ -1,0 +1,10 @@
+# Binary inputs
+*.bin
+
+# Compilation files
+build/
+
+# Binary files
+bin-to-graph
+graph-to-bin
+mpitest
