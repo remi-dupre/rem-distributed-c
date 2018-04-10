@@ -10,7 +10,7 @@
 
 
 // Maximum size of sent buffers
-const uint MAX_COM_SIZE = 8192;
+#define MAX_COM_SIZE 8192
 
 // Function giving the owner of a process
 #define owning_process(context, node) ((node) % (context->nb_process))
@@ -30,7 +30,7 @@ typedef struct RemContext
 /**
  * Create an initial context for the execution.
  */
-RemContext* init_context();
+RemContext* new_context();
 
 /**
  * Spread graph among process.

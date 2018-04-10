@@ -1,7 +1,8 @@
 # Names of the programs we want to compile
 TARGETS =\
 	bin-to-graph\
-	graph-to-bin
+	graph-to-bin\
+	mpitest
 
 # C compiler
 CXX = mpicc

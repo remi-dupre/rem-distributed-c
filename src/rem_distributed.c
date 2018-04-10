@@ -1,7 +1,7 @@
 #include "rem_distributed.h"
 
 
-RemContext* init_context()
+RemContext* new_context()
 {
     RemContext* context = malloc(sizeof(RemContext));
 
@@ -33,21 +33,17 @@ void send_graph(FILE* file, RemContext* context)
     // Send the number of nodes to everyone
     assert(context->process != 0);
 
-    // Receive graph's total number of nodesntext->nb_vertices = nb_nodes;
+    // Receive graph's total number of nodes
+    context->nb_vertices = nb_nodes;
     MPI_Bcast(
         &context->nb_vertices, 1, MPI_INT,
         0, context->communicator
     );
 
-    // Receive all edges
-    bool finished = false;
-    while (!finished) {
-
-    }
-
     // Read all edges at once
     Edge* edges = malloc(nb_edges * sizeof(Edge));
     fread(edges, sizeof(Edge), nb_edges, file);
+
 
     for (uint i = 0 ; i < nb_edges ; i++) {
         int owner = owning_process(context, edges[i].x);
@@ -58,14 +54,16 @@ void send_graph(FILE* file, RemContext* context)
         buffer_load[owner] += sizeof(Edge);
 
         // If the last edge is reached, add fake edge to send to everyone
-        Edge fake_edge = {
-            .x = context->nb_vertices,
-            .y = context->nb_vertices
-        };
-        for (int p = 0 ; p < context->nb_process ; p++) {
-            int buff_pos = buffer_disp[p] + buffer_load[p];
-            memcpy(&buffer[buff_pos], &fake_edge, sizeof(Edge));
-            buffer_load[p] += sizeof(Edge);
+        if (i + 1 == nb_edges) {
+            Edge fake_edge = {
+                .x = context->nb_vertices,
+                .y = context->nb_vertices
+            };
+            for (int p = 0 ; p < context->nb_process ; p++) {
+                int buff_pos = buffer_disp[p] + buffer_load[p];
+                memcpy(&buffer[buff_pos], &fake_edge, sizeof(Edge));
+                buffer_load[p] += sizeof(Edge);
+            }
         }
 
         assert(buffer_load[owner] <= MAX_COM_SIZE);
@@ -140,6 +138,13 @@ void recv_graph(RemContext* context)
 
 bool register_edge(Edge edge, RemContext* context)
 {
+    printf(
+        "%d: (%u, %u)\n",
+        context->process,
+        edge.x, edge.y
+    );
+
+    return edge.x != context->nb_vertices || edge.y != context->nb_vertices;
     // CHECK OWNERSHIP
     // IF INSIDE, EXECUTE SAMER
 }
