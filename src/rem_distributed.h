@@ -15,6 +15,10 @@
 // Function giving the owner of a process
 #define owner(node) ((node) % context->nb_process)
 
+// Function giving the rank of a node, given its index
+// Note that 4294967291 = 2^32-5 is the biggest prime under 2^32
+#define f(node) (((uint64_t) 4294967291 * (uint64_t) (node)) % context->nb_vertices)
+
 
 typedef struct RemContext
 {
@@ -53,6 +57,11 @@ void recv_graph(RemContext* context);
  * If this edge indicates that we won't receive anymore edges, return false.
  */
 bool register_edge(Edge edge, RemContext* context);
+
+/**
+ * Remove some edges from the border graph in order to only keep a local covering tree.
+ */
+void filter_border(RemContext* context);
 
 /**
  * Display some general informations about the context.

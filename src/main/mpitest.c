@@ -20,6 +20,7 @@ int main() {
     else
         recv_graph(context);
 
+    // filter_border(context);
     debug_context(context);
 
     MPI_Finalize();

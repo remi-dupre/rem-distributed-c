@@ -10,6 +10,12 @@ Graph* new_empty_graph(int nb_vertices)
     return graph;
 }
 
+void delete_graph(Graph* graph)
+{
+    free(graph->edges);
+    free(graph);
+}
+
 void reserve(Graph* graph, int min_size)
 {
     if (min_size > graph->container_size) {
@@ -26,16 +32,14 @@ void reserve(Graph* graph, int min_size)
     }
 }
 
-void insert_edge(Graph* graph, uint32_t x, uint32_t y)
+void insert_edge(Graph* graph, Edge edge)
 {
-    assert(x < graph->nb_vertices);
-    assert(y < graph->nb_vertices);
+    assert((int) edge.x < graph->nb_vertices);
+    assert((int) edge.y < graph->nb_vertices);
 
     // allocate more space
     reserve(graph, graph->nb_edges + 1);
-
-    graph->edges[graph->nb_edges].x = x;
-    graph->edges[graph->nb_edges].y = y;
+    graph->edges[graph->nb_edges] = edge;
     graph->nb_edges++;
 }
 
@@ -50,15 +54,16 @@ void insert_edges(Graph* graph, const Edge* edges, int nb_edges)
 
 Graph* read_as_ascii(FILE* file)
 {
-    int n, x, y;
+    int n;
+    Edge edge;
 
     fscanf(file, "%d\n", &n);
     assert(n >= 0);
 
     Graph* graph = new_empty_graph(n);
 
-    while(fscanf(file, "%d %d\n", &x, &y) == 1)
-        insert_edge(graph, x, y);
+    while(fscanf(file, "%u %u\n", &edge.x, &edge.y) == 1)
+        insert_edge(graph, edge);
 
     return graph;
 }

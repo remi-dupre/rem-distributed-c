@@ -39,6 +39,11 @@ typedef struct Graph
 Graph* new_empty_graph(int nb_vertices);
 
 /**
+ * Delete a graph, free any memory usage.
+ */
+void delete_graph(Graph* graph);
+
+/**
  * Indicate that a graph will need at least some space.
  */
 void reserve(Graph* graph, int min_size);
@@ -46,7 +51,7 @@ void reserve(Graph* graph, int min_size);
 /**
  * Insert a new edge to an existing graph.
  */
-void insert_edge(Graph* graph, uint32_t x, uint32_t y);
+void insert_edge(Graph* graph, Edge edge);
 
 /**
  * Insert a list of edges to an existing graph.
