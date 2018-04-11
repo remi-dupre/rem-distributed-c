@@ -1,9 +1,13 @@
 /**
  * Convert a graph from a binary representation to its simple ascii representation.
  */
+#include <assert.h>
 #include <stdio.h>
 
 #include "../graph.h"
+
+
+#define BUFFER_SIZE 8192
 
 
 int main(int argc, char** argv)
@@ -18,20 +22,26 @@ int main(int argc, char** argv)
     }
 
     // Graph's metadata
-    uint32_t nb_vertices, nb_edges;
-    fscanf(input, "%u %u", &nb_vertices, &nb_edges);
-
+    uint32_t nb_vertices;
+    fscanf(input, "%u", &nb_vertices);
     fwrite(&nb_vertices, sizeof(uint32_t), 1, output);
-    fwrite(&nb_edges, sizeof(uint32_t), 1, output);
 
     // Read all edges
-    Edge* edges = malloc(nb_edges * sizeof(Edge));
+    Edge* edges = malloc(BUFFER_SIZE);
 
-    for (uint i = 0 ; i < nb_edges ; i++)
-        fscanf(input, "%u %u", &edges[i].x, &edges[i].y);
+    int i = 0;
+    while (fscanf(input, "%u %u", &edges[i].x, &edges[i].y) > 0) {
+        assert(edges[i].x < nb_vertices);
+        assert(edges[i].y < nb_vertices);
 
-    // Write edges
-    fwrite(edges, sizeof(Edge), nb_edges, output);
+        i++;
+
+        if ((i+1) * sizeof(Edge) > BUFFER_SIZE) {
+            fwrite(edges, sizeof(Edge), i, output);
+            i = 0;
+        }
+    }
+    fwrite(edges, sizeof(Edge), i, output);
 
     // Close opened files
     if (argc > 2) {

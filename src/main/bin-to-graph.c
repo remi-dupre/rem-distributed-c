@@ -1,9 +1,13 @@
 /**
  * Convert a graph from its simple ascii representation to a binary representation.
  */
+#include <assert.h>
 #include <stdio.h>
 
 #include "../graph.h"
+
+
+#define BUFFER_SIZE 8192
 
 
 int main(int argc, char** argv)
@@ -18,18 +22,20 @@ int main(int argc, char** argv)
     }
 
     // Read entirely the file
-    uint32_t nb_vertices, nb_edges;
+    uint32_t nb_vertices;
     fread(&nb_vertices, sizeof(uint32_t), 1, input);
-    fread(&nb_edges, sizeof(uint32_t), 1, input);
-
-    Edge* edges = malloc(nb_edges * sizeof(Edge));
-    fread(edges, sizeof(Edge), nb_edges, input);
+    fprintf(output, "%u\n", nb_vertices);
 
     // Output the entire graph
-    fprintf(output, "%u %u\n", nb_vertices, nb_edges);
+    Edge* edges = malloc(BUFFER_SIZE);
+    const int max_nb_edges = BUFFER_SIZE / sizeof(Edge);
 
-    for (uint i = 0 ; i < nb_edges ; i++)
-        fprintf(output, "%u %u\n", edges[i].x, edges[i].y);
+    int nb_edges;  // number of edges read from last chunk
+    while ((nb_edges = fread(edges, sizeof(Edge), max_nb_edges, input)) > 1) {
+        for (int i = 0 ; i < nb_edges ; i++) {
+            fprintf(output, "%u %u\n", edges[i].x, edges[i].y);
+        }
+    }
 
     // Close opened files
     if (argc > 2) {

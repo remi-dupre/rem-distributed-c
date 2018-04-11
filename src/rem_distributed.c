@@ -46,9 +46,8 @@ void send_graph(FILE* file, RemContext* context)
     }
 
     // Read number of edges and nodes
-    uint32_t nb_nodes, nb_edges;
+    uint32_t nb_nodes;
     fread(&nb_nodes, sizeof(uint32_t), 1, file);
-    fread(&nb_edges, sizeof(uint32_t), 1, file);
 
     // Send the number of nodes to everyone
     change_nb_vertices(context, nb_nodes);
@@ -59,7 +58,6 @@ void send_graph(FILE* file, RemContext* context)
 
     // Read edges from files while sending
     Edge* edges = malloc(FILE_BUFF_SIZE);
-    uint edge_count = 0;
     const int max_loads_size = FILE_BUFF_SIZE / sizeof(Edge);
 
     // Distribute edges among process
@@ -68,8 +66,6 @@ void send_graph(FILE* file, RemContext* context)
         const uint load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
         for (uint i = 0 ; i < load_size ; i++) {
-            edge_count++;
-
             // Add datas to buffer
             int edge_owner = owner(edges[i].x);
             int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
@@ -77,7 +73,8 @@ void send_graph(FILE* file, RemContext* context)
             buffer_load[edge_owner] += sizeof(Edge);
 
             // If the last edge is reached, add fake edge to send to everyone
-            if (edge_count == nb_edges) {
+            bool is_last_edge = i + 1 == load_size && feof(file);
+            if (is_last_edge) {
                 Edge fake_edge = {
                     .x = context->nb_vertices,
                     .y = context->nb_vertices
@@ -89,10 +86,9 @@ void send_graph(FILE* file, RemContext* context)
                 }
             }
 
-            assert(edge_count < nb_edges || (feof(file) && i == load_size));
             assert(buffer_load[edge_owner] <= MAX_COM_SIZE);
 
-            if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || edge_count == nb_edges) {
+            if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || is_last_edge) {
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
