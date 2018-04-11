@@ -7,13 +7,17 @@
 #include <stdio.h>
 
 #include "graph.h"
+#include "task.h"
 
 
 // Maximum size of sent buffers
 #define MAX_COM_SIZE 8192
 
+// Maximum tasks poped before next communcation phase
+#define MAX_LOCAL_ITER 8192
+
 // Function giving the owner of a process
-#define owner(node) ((node) % context->nb_process)
+#define owner(node) (((int) node) % context->nb_process)
 
 // Function giving the rank of a node, given its index
 // Note that 4294967291 = 2^32-5 is the biggest prime under 2^32
@@ -27,7 +31,7 @@ typedef struct RemContext
     int nb_process;
 
     // Structure of the owned nodes
-    int nb_vertices;
+    uint nb_vertices;
     uint32_t* uf_parent;
     Graph* border_graph;  // graph containing border edges, if not flushed
 } RemContext;
@@ -59,9 +63,20 @@ void recv_graph(RemContext* context);
 bool register_edge(Edge edge, RemContext* context);
 
 /**
+ * Get the upper edge owned by current process from given edge.
+ * Do compression on the path.
+ */
+uint32_t local_root(uint32_t node, RemContext* context);
+
+/**
  * Remove some edges from the border graph in order to only keep a local covering tree.
  */
 void filter_border(RemContext* context);
+
+/**
+ * Start the distributed processing of data.
+ */
+void process_distributed(RemContext* context);
 
 /**
  * Display the disjoint set structure of all process.

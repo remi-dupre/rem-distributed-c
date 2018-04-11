@@ -206,12 +206,33 @@ bool register_edge(Edge edge, RemContext* context)
     return true;
 }
 
+uint32_t local_root(uint32_t node, RemContext* context)
+{
+    #define p(x) (context->uf_parent[x])
+
+    if (owner(p(node)) != context->process || p(node) == node) {
+        return node;
+    }
+    else {
+        uint32_t root = local_root(p(node), context);
+        p(node) = root;
+        return root;
+    }
+
+    #undef p
+}
+
 void filter_border(RemContext* context)
 {
+    // Compress local structure to get a tree height of one
+    for (uint32_t node = 0 ; node < context->nb_vertices ; node++)
+        if (owner(node) == context->process)
+            local_root(node, context);
+
     // Copy disjoint set structure in order not to alter it
     uint32_t* uf_copy = malloc(context->nb_vertices * sizeof(uint32_t));
 
-    for (int i = 0 ; i < context->nb_vertices ; i++)
+    for (uint i = 0 ; i < context->nb_vertices ; i++)
         uf_copy[i] = context->uf_parent[i];
 
     // Create a new graph in which we will push edges to keep
@@ -255,24 +276,142 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
+void process_distributed(RemContext* context)
+{
+    // Enqueue all initial edges as tasks to process
+    TaskQueue todo = empty_task_queue();
+
+    for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
+        push_task(&todo, context->border_graph->edges[i]);
+
+    // Create buffers of tasks to send to other process
+    Edge* to_send = malloc(context->nb_process * MAX_LOCAL_ITER * sizeof(Edge));
+    int* to_send_sizes = malloc(context->nb_process * sizeof(int));
+    int* to_send_displ = malloc(context->nb_process * sizeof(int));
+    int* fake_sizes = malloc(context->nb_process * sizeof(int));
+
+    for (int p = 0 ; p < context->nb_process ; p++) {
+        to_send_sizes[p] = 0;
+        to_send_displ[p] = p * MAX_COM_SIZE;
+        fake_sizes[p] = -1;
+    }
+
+    // Processing loop that stops when every process has no more data to send
+    while (true) {
+        // If this process has nothing to do, send a fake size to everyone
+        bool did_nothing = is_empty(todo);
+
+        // Execute tasks from the queue
+        #define p(x) (context->uf_parent[(x)])
+        #define lroot(x) ((owner(p(x)) == context->process) ? p(x) : x)
+
+        for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty(todo) ; t++) {
+            Edge r = pop_task(&todo);
+            r.x = lroot(r.x);
+
+            if (p(r.x) < r.y) {
+                int to_send_pos = (to_send_displ[owner(r.y)] + to_send_sizes[owner(r.y)]) / sizeof(Edge);
+                to_send[to_send_pos].x = r.y;
+                to_send[to_send_pos].y = p(r.x);
+                to_send_sizes[owner(r.y)] += sizeof(Edge);
+            }
+            else if (p(r.x) > r.y) {
+                if (p(r.x) == r.x) {
+                    p(r.x) = r.y;
+                }
+                else {
+                    int to_send_pos = (to_send_displ[owner(p(r.x))] + to_send_sizes[owner(p(r.x))]) / sizeof(Edge);
+                    to_send[to_send_pos].x = p(r.x);
+                    to_send[to_send_pos].y = r.y;
+                    to_send_sizes[owner(p(r.x))] += sizeof(Edge);
+
+                    p(r.x) = r.y;
+                }
+            }
+
+        }
+
+        #undef lroot
+        #undef p
+
+        // Share buffer sizes with other process
+        int* recv_sizes = malloc(context->nb_process * sizeof(int));
+        int* recv_displ = malloc(context->nb_process * sizeof(int));
+        MPI_Alltoall(
+            did_nothing ? fake_sizes : to_send_sizes, 1, MPI_INT,
+            recv_sizes, 1, MPI_INT,
+            context->communicator
+        );
+
+        int end_count = 0; // number of process who had nothing to do
+        int total_size = 0;
+        for (int p = 0 ; p < context->nb_process ; p++) {
+            recv_displ[p] = total_size;
+
+            if (recv_sizes[p] == -1) {
+                recv_sizes[p] = 0;
+                end_count++;
+            }
+            else {
+                assert(recv_sizes[p] % sizeof(Edge) == 0);
+                total_size += recv_sizes[p];
+            }
+        }
+
+        // If no one sends data, the algorithm is done
+        if (end_count == context->nb_process) {
+            free(recv_sizes);
+            free(recv_displ);
+            break;
+        }
+
+        // Share tasks with other process
+        Edge* recv_datas = malloc(total_size);
+        MPI_Alltoallv(
+            to_send, to_send_sizes, to_send_displ, MPI_CHAR,
+            recv_datas, recv_sizes, recv_displ, MPI_CHAR,
+            context->communicator
+        );
+
+        // Load tasks in the queue
+        for (uint t = 0 ; t < total_size / sizeof(Edge) ; t++)
+            push_task(&todo, recv_datas[t]);
+
+        // Empty send buffers
+        for (int p = 0 ; p < context->nb_process ; p++)
+            to_send_sizes[p] = 0;
+
+        // Free reception buffers
+        free(recv_sizes);
+        free(recv_displ);
+        free(recv_datas);
+    }
+
+    // Free allocated memory
+    free(to_send);
+    free(to_send_sizes);
+    free(to_send_displ);
+    free(fake_sizes);
+}
+
 void debug_structure(const RemContext* context)
 {
     // Collect the list of nodes owned by this process
     int my_size = 0;
-    for (int i = 0 ; i < context->nb_vertices ; i++)
+    for (uint i = 0 ; i < context->nb_vertices ; i++)
         if (owner(i) == context->process)
             my_size += sizeof(Edge);
 
     Edge* edges = malloc(my_size * sizeof(Edge));
     int edge_pos = 0;
-    for (int i = 0 ; i < context->nb_vertices ; i++) {
+    for (uint i = 0 ; i < context->nb_vertices ; i++) {
         if (owner(i) == context->process) {
             edges[edge_pos].x = i;
             edges[edge_pos].y = context->uf_parent[i];
             edge_pos++;
         }
     }
-    assert(edge_pos * sizeof(Edge) == my_size);
+    assert(edge_pos * (int) sizeof(Edge) == my_size);
 
     // Collect size from all process
     int* sizes = malloc(context->nb_process * sizeof(int));
@@ -306,7 +445,7 @@ void debug_structure(const RemContext* context)
 
     // Display edges
     if (context->process == 0)
-        for (int i = 0 ; i < total_size / sizeof(Edge) ; i++)
+        for (uint i = 0 ; i < total_size / sizeof(Edge) ; i++)
             printf("%u %u\n", all_edges[i].x, all_edges[i].y);
 
     free(edges);
