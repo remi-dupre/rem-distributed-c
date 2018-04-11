@@ -308,7 +308,7 @@ void process_distributed(RemContext* context)
 
     for (int p = 0 ; p < context->nb_process ; p++) {
         to_send_sizes[p] = 0;
-        to_send_displ[p] = p * MAX_COM_SIZE;
+        to_send_displ[p] = p * (MAX_COM_SIZE / sizeof(Edge));
         fake_sizes[p] = -1;
     }
 
@@ -328,20 +328,20 @@ void process_distributed(RemContext* context)
             r.x = lroot(r.x);
 
             if (p(r.x) < r.y) {
-                int to_send_pos = (to_send_displ[owner(r.y)] + to_send_sizes[owner(r.y)]) / sizeof(Edge);
+                int to_send_pos = to_send_displ[owner(r.y)] + to_send_sizes[owner(r.y)];
                 to_send[to_send_pos].x = r.y;
                 to_send[to_send_pos].y = p(r.x);
-                to_send_sizes[owner(r.y)] += sizeof(Edge);
+                to_send_sizes[owner(r.y)] += 1;
             }
             else if (p(r.x) > r.y) {
                 if (p(r.x) == r.x) {
                     p(r.x) = r.y;
                 }
                 else {
-                    int to_send_pos = (to_send_displ[owner(p(r.x))] + to_send_sizes[owner(p(r.x))]) / sizeof(Edge);
+                    int to_send_pos = to_send_displ[owner(p(r.x))] + to_send_sizes[owner(p(r.x))];
                     to_send[to_send_pos].x = p(r.x);
                     to_send[to_send_pos].y = r.y;
-                    to_send_sizes[owner(p(r.x))] += sizeof(Edge);
+                    to_send_sizes[owner(p(r.x))] += 1;
 
                     p(r.x) = r.y;
                 }
@@ -371,7 +371,6 @@ void process_distributed(RemContext* context)
                 end_count++;
             }
             else {
-                assert(recv_sizes[p] % sizeof(Edge) == 0);
                 total_size += recv_sizes[p];
             }
         }
@@ -384,15 +383,15 @@ void process_distributed(RemContext* context)
         }
 
         // Share tasks with other process
-        Edge* recv_datas = malloc(total_size);
+        Edge* recv_datas = malloc(total_size * sizeof(Edge));
         MPI_Alltoallv(
-            to_send, to_send_sizes, to_send_displ, MPI_CHAR,
-            recv_datas, recv_sizes, recv_displ, MPI_CHAR,
+            to_send, to_send_sizes, to_send_displ, MPI_EDGE,
+            recv_datas, recv_sizes, recv_displ, MPI_EDGE,
             context->communicator
         );
 
         // Load tasks in the queue
-        for (uint t = 0 ; t < total_size / sizeof(Edge) ; t++)
+        for (uint t = 0 ; t < total_size ; t++)
             push_task(&todo, recv_datas[t]);
 
         // Empty send buffers
@@ -418,7 +417,7 @@ void debug_structure(const RemContext* context)
     int my_size = 0;
     for (uint i = 0 ; i < context->nb_vertices ; i++)
         if (owner(i) == context->process)
-            my_size += sizeof(Edge);
+            my_size++;
 
     Edge* edges = malloc(my_size * sizeof(Edge));
     int edge_pos = 0;
@@ -429,7 +428,7 @@ void debug_structure(const RemContext* context)
             edge_pos++;
         }
     }
-    assert(edge_pos * (int) sizeof(Edge) == my_size);
+    assert(edge_pos == my_size);
 
     // Collect size from all process
     int* sizes = malloc(context->nb_process * sizeof(int));
@@ -454,10 +453,10 @@ void debug_structure(const RemContext* context)
     }
 
     // Collect the list of edges
-    Edge* all_edges = malloc(total_size);
+    Edge* all_edges = malloc(total_size * sizeof(Edge));
     MPI_Gatherv(
-        edges, my_size, MPI_CHAR,
-        all_edges, sizes, displ, MPI_CHAR,
+        edges, my_size, MPI_EDGE,
+        all_edges, sizes, displ, MPI_EDGE,
         0, context->communicator
     );
 
@@ -467,7 +466,7 @@ void debug_structure(const RemContext* context)
         printf("%d\n", context->nb_vertices);
 
         // Print edges
-        for (uint i = 0 ; i < total_size / sizeof(Edge) ; i++)
+        for (uint i = 0 ; i < total_size ; i++)
             printf("%u %u\n", all_edges[i].x, all_edges[i].y);
     }
 
