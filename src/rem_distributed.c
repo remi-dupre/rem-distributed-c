@@ -38,11 +38,11 @@ void send_graph(FILE* file, RemContext* context)
 
     int* buffer_load = malloc(context->nb_process * sizeof(int));
     int* buffer_disp = malloc(context->nb_process * sizeof(int));
-    char* buffer = malloc(context->nb_process * MAX_COM_SIZE * sizeof(char));
+    Edge* buffer = malloc(context->nb_process * (MAX_COM_SIZE / sizeof(Edge)) * sizeof(Edge));
 
     for (int i = 0 ; i < context->nb_process ; i++) {
         buffer_load[i] = 0;
-        buffer_disp[i] = i * MAX_COM_SIZE;
+        buffer_disp[i] = i * (MAX_COM_SIZE / sizeof(Edge));
     }
 
     // Read number of edges and nodes
@@ -66,11 +66,14 @@ void send_graph(FILE* file, RemContext* context)
         const uint load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
         for (uint i = 0 ; i < load_size ; i++) {
+            assert(edges[i].x < context->nb_vertices);
+            assert(edges[i].y < context->nb_vertices);
+
             // Add datas to buffer
-            int edge_owner = owner(edges[i].x);
-            int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
+            const int edge_owner = owner(edges[i].x);
+            const int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
             memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
-            buffer_load[edge_owner] += sizeof(Edge);
+            buffer_load[edge_owner]++;
 
             // If the last edge is reached, add fake edge to send to everyone
             bool is_last_edge = i + 1 == load_size && feof(file);
@@ -80,15 +83,15 @@ void send_graph(FILE* file, RemContext* context)
                     .y = context->nb_vertices
                 };
                 for (int p = 0 ; p < context->nb_process ; p++) {
-                    int buff_pos = buffer_disp[p] + buffer_load[p];
+                    const int buff_pos = buffer_disp[p] + buffer_load[p];
                     memcpy(&buffer[buff_pos], &fake_edge, sizeof(Edge));
-                    buffer_load[p] += sizeof(Edge);
+                    buffer_load[p]++;
                 }
             }
 
-            assert(buffer_load[edge_owner] <= MAX_COM_SIZE);
+            assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
 
-            if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || is_last_edge) {
+            if ((buffer_load[edge_owner] + 2) * sizeof(Edge) > MAX_COM_SIZE || is_last_edge) {
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
@@ -98,17 +101,21 @@ void send_graph(FILE* file, RemContext* context)
                 );
 
                 // Send data
-                Edge* recv_buff = malloc(buffer_load[0] * sizeof(char));
+                Edge* recv_buff = malloc(my_size * sizeof(Edge));
                 MPI_Scatterv(
-                    buffer, buffer_load, buffer_disp, MPI_CHAR,
-                    recv_buff, my_size, MPI_CHAR,
+                    buffer, buffer_load, buffer_disp, MPI_EDGE,
+                    recv_buff, my_size, MPI_EDGE,
                     0, context->communicator
                 );
 
                 // Register owned edges
-                const int nb_edges = my_size / sizeof(Edge);
-                for (int i = 0 ; i < nb_edges ; i++)
+                for (int i = 0 ; i < my_size ; i++) {
+                    assert(owner(recv_buff[i].x) == 0 || recv_buff[i].x == context->nb_vertices);
+                    assert(recv_buff[i].x <= context->nb_vertices);
+                    assert(recv_buff[i].y <= context->nb_vertices);
+
                     register_edge(recv_buff[i], context);
+                }
 
                 free(recv_buff);
 
@@ -148,18 +155,22 @@ void recv_graph(RemContext* context)
             &buffer_load, 1, MPI_INT,
             0, context->communicator
         );
-        assert(buffer_load <= MAX_COM_SIZE);
-        assert(buffer_load % sizeof(Edge) == 0);
+        assert(buffer_load * sizeof(Edge) <= MAX_COM_SIZE);
 
         // Receive datas
         MPI_Scatterv(
-            NULL, NULL, NULL, MPI_INT,
-            buffer, buffer_load, MPI_INT,
+            NULL, NULL, NULL, MPI_EDGE,
+            buffer, buffer_load, MPI_EDGE,
             0, context->communicator
         );
 
-        for (uint i = 0 ; i < (buffer_load / sizeof(Edge)) ; i++)
+        for (uint i = 0 ; i < buffer_load ; i++) {
+            assert(owner(buffer[i].x) == context->process || buffer[i].x == context->nb_vertices);
+            assert(buffer[i].x <= context->nb_vertices);
+            assert(buffer[i].y <= context->nb_vertices);
+
             finished = !register_edge(buffer[i], context);
+        }
     }
 
     free(buffer);
@@ -215,15 +226,18 @@ bool register_edge(Edge edge, RemContext* context)
 
 uint32_t local_root(uint32_t node, RemContext* context)
 {
+    assert(node < context->nb_vertices);
+    assert(owner(node) == context->process);
+
     #define p(x) (context->uf_parent[x])
 
     if (owner(p(node)) != context->process || p(node) == node) {
         return node;
     }
     else {
-        uint32_t root = local_root(p(node), context);
-        p(node) = root;
-        return root;
+        const uint32_t lroot = local_root(p(node), context);
+        p(node) = lroot;
+        return lroot;
     }
 
     #undef p
@@ -231,11 +245,6 @@ uint32_t local_root(uint32_t node, RemContext* context)
 
 void filter_border(RemContext* context)
 {
-    // Compress local structure to get a tree height of one
-    for (uint32_t node = 0 ; node < context->nb_vertices ; node++)
-        if (owner(node) == context->process)
-            local_root(node, context);
-
     // Copy disjoint set structure in order not to alter it
     uint32_t* uf_copy = malloc(context->nb_vertices * sizeof(uint32_t));
 
@@ -310,10 +319,12 @@ void process_distributed(RemContext* context)
 
         // Execute tasks from the queue
         #define p(x) (context->uf_parent[(x)])
-        #define lroot(x) ((owner(p(x)) == context->process) ? p(x) : x)
+        #define lroot(x) (local_root(x, context))
 
         for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty(todo) ; t++) {
             Edge r = pop_task(&todo);
+            assert(owner(r.x) == context->process);
+
             r.x = lroot(r.x);
 
             if (p(r.x) < r.y) {
@@ -451,9 +462,14 @@ void debug_structure(const RemContext* context)
     );
 
     // Display edges
-    if (context->process == 0)
+    if (context->process == 0) {
+        // Print number of nodes
+        printf("%d\n", context->nb_vertices);
+
+        // Print edges
         for (uint i = 0 ; i < total_size / sizeof(Edge) ; i++)
             printf("%u %u\n", all_edges[i].x, all_edges[i].y);
+    }
 
     free(edges);
     free(sizes);

@@ -7,6 +7,9 @@
 int main(int argc, char** argv) {
     MPI_Init(NULL, NULL);
 
+    MPI_Type_contiguous(sizeof(Edge), MPI_CHAR, &MPI_EDGE);
+    MPI_Type_commit(&MPI_EDGE);
+
     // Open input file
     FILE* input = stdin;
 

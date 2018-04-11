@@ -3,6 +3,7 @@
  */
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "../graph.h"
 
@@ -16,9 +17,13 @@ int main(int argc, char** argv)
     FILE* output = stdout;
 
     // Open files for input and output
-    if (argc > 2) {
+    if (argc > 1) {
         input = fopen(argv[1], "rb");
-        output = fopen(argv[2], "w");
+
+        if (argc == 2)
+            output = fopen(strcat(argv[1], ".bin"), "w");
+        else
+            output = fopen(argv[2], "w");
     }
 
     // Graph's metadata

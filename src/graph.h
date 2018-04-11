@@ -3,11 +3,11 @@
 
 #include <assert.h>
 #include <memory.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
 
 /**
  * Representation of an edge as concatenation of two integers.
@@ -19,6 +19,9 @@ typedef struct Edge
 } Edge;
 
 static_assert(sizeof(Edge) == 2*sizeof(uint32_t), "Edges shouldn't be padded");
+
+// Mpi edge's type
+MPI_Datatype MPI_EDGE;
 
 /**
  * A graph is a number of vertices, and a list of its edges.
