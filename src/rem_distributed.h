@@ -10,6 +10,9 @@
 #include "task.h"
 
 
+// Size of chunks to load from files
+#define FILE_BUFF_SIZE 8192
+
 // Maximum size of sent buffers
 #define MAX_COM_SIZE 8192
 

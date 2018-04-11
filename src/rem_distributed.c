@@ -57,58 +57,69 @@ void send_graph(FILE* file, RemContext* context)
         0, context->communicator
     );
 
-    // Read all edges at once
-    Edge* edges = malloc(nb_edges * sizeof(Edge));
-    fread(edges, sizeof(Edge), nb_edges, file);
+    // Read edges from files while sending
+    Edge* edges = malloc(FILE_BUFF_SIZE);
+    uint edge_count = 0;
+    const int max_loads_size = FILE_BUFF_SIZE / sizeof(Edge);
 
     // Distribute edges among process
-    for (uint i = 0 ; i < nb_edges ; i++) {
-        // Add datas to buffer
-        int edge_owner = owner(edges[i].x);
-        int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
-        memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
-        buffer_load[edge_owner] += sizeof(Edge);
+    while (!feof(file)) {
+        // Read a chunk from the file
+        const uint load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
-        // If the last edge is reached, add fake edge to send to everyone
-        if (i + 1 == nb_edges) {
-            Edge fake_edge = {
-                .x = context->nb_vertices,
-                .y = context->nb_vertices
-            };
-            for (int p = 0 ; p < context->nb_process ; p++) {
-                int buff_pos = buffer_disp[p] + buffer_load[p];
-                memcpy(&buffer[buff_pos], &fake_edge, sizeof(Edge));
-                buffer_load[p] += sizeof(Edge);
+        for (uint i = 0 ; i < load_size ; i++) {
+            edge_count++;
+
+            // Add datas to buffer
+            int edge_owner = owner(edges[i].x);
+            int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
+            memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
+            buffer_load[edge_owner] += sizeof(Edge);
+
+            // If the last edge is reached, add fake edge to send to everyone
+            if (edge_count == nb_edges) {
+                Edge fake_edge = {
+                    .x = context->nb_vertices,
+                    .y = context->nb_vertices
+                };
+                for (int p = 0 ; p < context->nb_process ; p++) {
+                    int buff_pos = buffer_disp[p] + buffer_load[p];
+                    memcpy(&buffer[buff_pos], &fake_edge, sizeof(Edge));
+                    buffer_load[p] += sizeof(Edge);
+                }
             }
-        }
 
-        assert(buffer_load[edge_owner] <= MAX_COM_SIZE);
-        if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || i + 1  == nb_edges) {
-            // Send buffer sizes
-            int my_size;
-            MPI_Scatter(
-                buffer_load, 1, MPI_INT,
-                &my_size, 1, MPI_INT,
-                0, context->communicator
-            );
+            assert(edge_count < nb_edges || (feof(file) && i == load_size));
+            assert(buffer_load[edge_owner] <= MAX_COM_SIZE);
 
-            // Send data
-            Edge* recv_buff = malloc(buffer_load[0] * sizeof(char));
-            int nb_edges = my_size / sizeof(Edge);
-            MPI_Scatterv(
-                buffer, buffer_load, buffer_disp, MPI_CHAR,
-                recv_buff, my_size, MPI_CHAR,
-                0, context->communicator
-            );
+            if (buffer_load[edge_owner] + 2*sizeof(Edge) > MAX_COM_SIZE || edge_count == nb_edges) {
+                // Send buffer sizes
+                int my_size;
+                MPI_Scatter(
+                    buffer_load, 1, MPI_INT,
+                    &my_size, 1, MPI_INT,
+                    0, context->communicator
+                );
 
-            for (int i = 0 ; i < nb_edges ; i++)
-                register_edge(recv_buff[i], context);
+                // Send data
+                Edge* recv_buff = malloc(buffer_load[0] * sizeof(char));
+                MPI_Scatterv(
+                    buffer, buffer_load, buffer_disp, MPI_CHAR,
+                    recv_buff, my_size, MPI_CHAR,
+                    0, context->communicator
+                );
 
-            free(recv_buff);
+                // Register owned edges
+                const int nb_edges = my_size / sizeof(Edge);
+                for (int i = 0 ; i < nb_edges ; i++)
+                    register_edge(recv_buff[i], context);
 
-            // Empty buffers
-            for (int p = 0 ; p < context->nb_process ; p++)
-                buffer_load[p] = 0;
+                free(recv_buff);
+
+                // Empty buffers
+                for (int p = 0 ; p < context->nb_process ; p++)
+                    buffer_load[p] = 0;
+            }
         }
     }
 
