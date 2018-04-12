@@ -61,23 +61,19 @@ void send_graph(FILE* file, RemContext* context)
     const int max_loads_size = FILE_BUFF_SIZE / sizeof(Edge);
 
     // Distribute edges among process
-    while (!feof(file)) {
+    do {
         // Read a chunk from the file
         const uint load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
-        for (uint i = 0 ; i < load_size ; i++) {
-            assert(edges[i].x < context->nb_vertices);
-            assert(edges[i].y < context->nb_vertices);
-
-            // Add datas to buffer
-            const int edge_owner = owner(edges[i].x);
-            const int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
-            memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
-            buffer_load[edge_owner]++;
-
-            // If the last edge is reached, add fake edge to send to everyone
-            bool is_last_edge = i + 1 == load_size && feof(file);
-            if (is_last_edge) {
+        for (uint i = 0 ; i <= load_size ; i++) {
+            // Check if we need to insert "stop message"
+            const bool is_last_edge = i == load_size && feof(file);
+            if (i == load_size && !is_last_edge) {
+                // This last step of the loop shouldn't insert anything
+                break;
+            }
+            else if (is_last_edge) {
+                // Insert a fake edge
                 Edge fake_edge = {
                     .x = context->nb_vertices,
                     .y = context->nb_vertices
@@ -88,10 +84,21 @@ void send_graph(FILE* file, RemContext* context)
                     buffer_load[p]++;
                 }
             }
+            else {
+                // Insert a regular edge to buffer
+                assert(edges[i].x < context->nb_vertices);
+                assert(edges[i].y < context->nb_vertices);
 
-            assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
+                // Add datas to buffer
+                const int edge_owner = owner(edges[i].x);
+                const int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
+                memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
+                buffer_load[edge_owner]++;
+            }
 
-            if ((buffer_load[edge_owner] + 2) * sizeof(Edge) > MAX_COM_SIZE || is_last_edge) {
+            assert(buffer_load[owner(edges[i].x)] * sizeof(Edge) <= MAX_COM_SIZE);
+
+            if (is_last_edge || (buffer_load[owner(edges[i].x)] + 2) * sizeof(Edge) > MAX_COM_SIZE) {
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
@@ -124,7 +131,7 @@ void send_graph(FILE* file, RemContext* context)
                     buffer_load[p] = 0;
             }
         }
-    }
+    } while (!feof(file));
 
     free(buffer_load);
     free(buffer);
@@ -308,7 +315,7 @@ void process_distributed(RemContext* context)
 
     for (int p = 0 ; p < context->nb_process ; p++) {
         to_send_sizes[p] = 0;
-        to_send_displ[p] = p * (MAX_COM_SIZE / sizeof(Edge));
+        to_send_displ[p] = p * MAX_LOCAL_ITER;
         fake_sizes[p] = -1;
     }
 
