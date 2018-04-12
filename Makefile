@@ -1,5 +1,6 @@
 # Names of the programs we want to compile
 TARGETS =\
+	generate\
 	bin-to-graph\
 	graph-to-bin\
 	mpitest

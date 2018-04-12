@@ -7,4 +7,5 @@ build/
 # Binary files
 bin-to-graph
 graph-to-bin
+generate
 mpitest
