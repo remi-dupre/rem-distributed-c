@@ -164,7 +164,7 @@ void recv_graph(RemContext* context)
             0, context->communicator
         );
 
-        for (uint i = 0 ; i < buffer_load ; i++) {
+        for (int i = 0 ; i < buffer_load ; i++) {
             assert(owner(buffer[i].x) == context->process || buffer[i].x == context->nb_vertices);
             assert(buffer[i].x <= context->nb_vertices);
             assert(buffer[i].y <= context->nb_vertices);
@@ -391,7 +391,7 @@ void process_distributed(RemContext* context)
         );
 
         // Load tasks in the queue
-        for (uint t = 0 ; t < total_size ; t++)
+        for (int t = 0 ; t < total_size ; t++)
             push_task(&todo, recv_datas[t]);
 
         // Empty send buffers
@@ -466,7 +466,7 @@ void debug_structure(const RemContext* context)
         printf("%d\n", context->nb_vertices);
 
         // Print edges
-        for (uint i = 0 ; i < total_size ; i++)
+        for (int i = 0 ; i < total_size ; i++)
             printf("%u %u\n", all_edges[i].x, all_edges[i].y);
     }
 
