@@ -16,6 +16,17 @@ int main(int argc, char** argv) {
     FILE* file1 = fopen(argv[1], "r");
     FILE* file2 = fopen(argv[2], "r");
 
+    // Skip comments from files
+    char c;
+
+    while ((c = fgetc(file1)) == '%')
+        while (fgetc(file1) != '\n');
+    ungetc(c, file1);
+
+    while ((c = fgetc(file2)) == '%')
+        while (fgetc(file2) != '\n');
+    ungetc(c, file2);
+
     uint32_t nb_vertices1;
     uint32_t nb_vertices2;
 

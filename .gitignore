@@ -1,6 +1,11 @@
 # Binary inputs
 *.bin
 
+# Test outputs
+inputs/random_*
+inputs/*.bin
+inputs/*.out
+
 # Compilation files
 build/
 
@@ -8,5 +13,6 @@ build/
 compare
 bin-to-graph
 graph-to-bin
+mtx-to-bin
 generate
 mpitest

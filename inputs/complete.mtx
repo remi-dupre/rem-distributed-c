@@ -1,3 +1,6 @@
+%% Simple graph input
+% Describes a complete graph of 10 vertices.
+%%
 10
 1 0
 2 0

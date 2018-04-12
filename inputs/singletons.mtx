@@ -1,0 +1,4 @@
+%% Simple graph input
+% Describes a graph containing 10 vertices and no edge.
+%%
+10

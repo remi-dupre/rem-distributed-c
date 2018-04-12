@@ -35,7 +35,6 @@ Some tools are also included to manipulate graphs.
 ./generate random 100 250 > graph       # generate a random graph of 100 nodes and 250 edges
 cat graph | ./spanning_forest > forest  # process a spanning forest of the graph
 cat graph forest | ./compare            # check that two graph have the same components
-cat forest | ./infos                    # give some general informations about a graph
 ./graph_to_bin graph graph.bin          # converts the graph to a binary representation
 ```
 

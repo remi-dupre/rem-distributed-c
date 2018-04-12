@@ -29,9 +29,9 @@ print()
 
 
 # List of input files
-inputs = sorted([file for file in os.listdir('inputs') if file[-4:] not in ['.bin', '.out']])
+inputs = sorted([file for file in os.listdir('inputs') if file[-4:] not in ['.bin', '.out', '.mtx']])
 for i in range(len(inputs)):
-    print('Convert graphs to binary (%d/%d)' % (i+1, len(inputs)), end='\r')
+    print('Convert random graphs to binary (%d/%d)' % (i+1, len(inputs)), end='\r')
     input = inputs[i]
 
     command = [BIN_CONV, 'inputs/' + input]
@@ -39,14 +39,26 @@ for i in range(len(inputs)):
 
 print()
 
+inputs = sorted([file for file in os.listdir('inputs') if file[-4:] == '.mtx'])
+for i in range(len(inputs)):
+    print('Convert mtx graphs to binary (%d/%d)' % (i+1, len(inputs)), end='\r')
+    input = inputs[i]
+
+    command = ['./mtx-to-bin', 'inputs/' + input]
+    subprocess.call(command)
+
+print()
+
 errors_count = 0
 
+
+inputs = sorted([file[:-4] for file in os.listdir('inputs') if file[-4:] == '.bin'])
 # Execute the algorithm
 for i in range(len(inputs)):
     input = inputs[i]
     print('Testing %s (%d/%d) ... ' % (input, i+1, len(inputs)), end='', flush=True)
 
-    command = ['mpirun', '-np', '2', './mpitest', 'inputs/' + input + '.bin']
+    command = ['mpirun', '-np', '4', './mpitest', 'inputs/' + input + '.bin']
     with open('inputs/' + input + '.out', 'w') as file:
         rv = subprocess.call(command, stdout=file, stderr=subprocess.PIPE)
 
