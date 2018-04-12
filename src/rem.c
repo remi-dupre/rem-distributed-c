@@ -35,3 +35,19 @@ void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent)
 
     #undef p
 }
+
+uint32_t repr(uint32_t node, uint32_t* uf_parent)
+{
+    #define p(x) uf_parent[x]
+
+    if (p(node) == node) {
+        return node;
+    }
+    else {
+        const uint32_t root = repr(p(node), uf_parent);
+        p(node) = root;
+        return root;
+    }
+
+    #undef p
+}

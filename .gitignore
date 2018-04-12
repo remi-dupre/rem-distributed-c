@@ -5,6 +5,7 @@
 build/
 
 # Binary files
+compare
 bin-to-graph
 graph-to-bin
 generate
