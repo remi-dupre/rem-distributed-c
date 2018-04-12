@@ -18,8 +18,6 @@ typedef struct Edge
     uint32_t y;
 } Edge;
 
-static_assert(sizeof(Edge) == 2*sizeof(uint32_t), "Edges shouldn't be padded");
-
 // Mpi edge's type
 MPI_Datatype MPI_EDGE;
 
