@@ -1,10 +1,17 @@
 #include <mpi.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #include "../rem_distributed.h"
 
 
 int main(int argc, char** argv) {
+    // Timing values
+    struct timeval t_start;
+    struct timeval t_end_send;
+    struct timeval t_end_process;
+
+    // Initialisation of mpi
     MPI_Init(NULL, NULL);
 
     MPI_Type_contiguous(sizeof(Edge), MPI_CHAR, &MPI_EDGE);
@@ -22,6 +29,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &nb_process);
 
     // Start REM algorithm
+    gettimeofday(&t_start, NULL);
     RemContext* context = new_context();
 
     if (process == 0)
@@ -29,9 +37,11 @@ int main(int argc, char** argv) {
     else
         recv_graph(context);
 
+    gettimeofday(&t_end_send, NULL);
     filter_border(context);
     process_distributed(context);
 
+    gettimeofday(&t_end_process, NULL);
     debug_structure(context);
 
     // Close input file
@@ -39,4 +49,25 @@ int main(int argc, char** argv) {
         fclose(input);
 
     MPI_Finalize();
+
+    // Debug timings
+    if (process == 0) {
+        FILE* logs = fopen("mpitest.log", "a");
+
+        long long time_sending_ms = (t_end_send.tv_sec - t_start.tv_sec) * 1000;
+        time_sending_ms += (t_end_send.tv_usec - t_start.tv_usec) / 1000;
+
+        long long time_process_ms = (t_end_process.tv_sec - t_end_send.tv_sec) * 1000;
+        time_process_ms += (t_end_process.tv_usec - t_end_send.tv_usec) / 1000;
+
+        fprintf(logs, ">>");
+        for (int i = 0 ; i < argc ; i++)
+            fprintf(logs, " %s", argv[i]);
+        fprintf(logs, "\n");
+
+        fprintf(logs, "Time spent sending datas: %lldms\n", time_sending_ms);
+        fprintf(logs, "Time spent processing: %lldms\n\n", time_process_ms);
+
+        fclose(logs);
+    }
 }
