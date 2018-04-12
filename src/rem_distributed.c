@@ -63,9 +63,9 @@ void send_graph(FILE* file, RemContext* context)
     // Distribute edges among process
     do {
         // Read a chunk from the file
-        const uint load_size = fread(edges, sizeof(Edge), max_loads_size, file);
+        const unsigned load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
-        for (uint i = 0 ; i <= load_size ; i++) {
+        for (unsigned i = 0 ; i <= load_size ; i++) {
             // Check if we need to insert "stop message"
             const bool is_last_edge = i == load_size && feof(file);
             if (i == load_size && !is_last_edge) {
@@ -255,7 +255,7 @@ void filter_border(RemContext* context)
     // Copy disjoint set structure in order not to alter it
     uint32_t* uf_copy = malloc(context->nb_vertices * sizeof(uint32_t));
 
-    for (uint i = 0 ; i < context->nb_vertices ; i++)
+    for (unsigned i = 0 ; i < context->nb_vertices ; i++)
         uf_copy[i] = context->uf_parent[i];
 
     // Create a new graph in which we will push edges to keep
@@ -263,8 +263,8 @@ void filter_border(RemContext* context)
 
     #define p(x) uf_copy[x]
     for (int i = 0 ; i < context->border_graph->nb_edges ; i++) {
-        uint r_x = context->border_graph->edges[i].x;
-        uint r_y = context->border_graph->edges[i].y;
+        unsigned r_x = context->border_graph->edges[i].x;
+        unsigned r_y = context->border_graph->edges[i].y;
 
         while (p(r_x) != p(r_y)) {
             if (p(r_x) < p(r_y)) {
@@ -422,13 +422,13 @@ void debug_structure(const RemContext* context)
 {
     // Collect the list of nodes owned by this process
     int my_size = 0;
-    for (uint i = 0 ; i < context->nb_vertices ; i++)
+    for (unsigned i = 0 ; i < context->nb_vertices ; i++)
         if (owner(i) == context->process)
             my_size++;
 
     Edge* edges = malloc(my_size * sizeof(Edge));
     int edge_pos = 0;
-    for (uint i = 0 ; i < context->nb_vertices ; i++) {
+    for (unsigned i = 0 ; i < context->nb_vertices ; i++) {
         if (owner(i) == context->process) {
             edges[edge_pos].x = i;
             edges[edge_pos].y = context->uf_parent[i];

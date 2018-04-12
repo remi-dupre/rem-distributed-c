@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     uint32_t* uf1 = malloc(nb_vertices1 * sizeof(uint32_t));
     uint32_t* uf2 = malloc(nb_vertices2 * sizeof(uint32_t));
 
-    for (uint i = 0 ; i < nb_vertices1 ; i++)
+    for (unsigned i = 0 ; i < nb_vertices1 ; i++)
         uf1[i] = uf2[i] = i;
 
     // Load edges from files

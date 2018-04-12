@@ -22,11 +22,11 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        const uint nb_vertices = atoi(argv[2]);
+        const unsigned nb_vertices = atoi(argv[2]);
         printf("%u\n", nb_vertices);
 
-        for (uint x = 0 ; x < nb_vertices ; x++)
-            for (uint y = 0 ; y < x ; y++)
+        for (unsigned x = 0 ; x < nb_vertices ; x++)
+            for (unsigned y = 0 ; y < x ; y++)
                 printf("%u %u\n", x, y);
     }
 
@@ -36,13 +36,13 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        const uint nb_vertices = atoi(argv[2]);
-        const uint nb_edges = atoi(argv[3]);
+        const unsigned nb_vertices = atoi(argv[2]);
+        const unsigned nb_edges = atoi(argv[3]);
         printf("%u\n", nb_vertices);
 
-        for (uint i = 0 ; i < nb_edges ; i++) {
-            const uint x = rand() % nb_vertices;
-            const uint y = rand() % nb_vertices;
+        for (unsigned i = 0 ; i < nb_edges ; i++) {
+            const unsigned x = rand() % nb_vertices;
+            const unsigned y = rand() % nb_vertices;
             printf("%u %u\n", x, y);
         }
     }

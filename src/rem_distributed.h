@@ -34,7 +34,7 @@ typedef struct RemContext
     int nb_process;
 
     // Structure of the owned nodes
-    uint nb_vertices;
+    unsigned nb_vertices;
     uint32_t* uf_parent;
     Graph* border_graph;  // graph containing border edges, if not flushed
 } RemContext;
