@@ -22,9 +22,13 @@
 // Function giving the owner of a process
 #define owner(node) (((int) node) % context->nb_process)
 
-// Function giving the rank of a node, given its index
-// Note that 4294967291 = 2^32-5 is the biggest prime under 2^32
-#define f(node) (((uint64_t) 4294967291 * (uint64_t) (node)) % context->nb_vertices)
+// Function giving the rank of a node, defined as a recursive sequence
+// f[0] = 0 and f[n+1] = f_next(f[n])
+#define f_next(x, context) (\
+    ((x) + (context)->nb_process < (context)->nb_vertices) ?\
+        ((x) + (context)->nb_process) :\
+        ((x) % (context)->nb_process + 1)\
+    )
 
 
 typedef struct RemContext

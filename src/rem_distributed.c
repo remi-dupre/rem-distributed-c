@@ -56,6 +56,14 @@ void send_graph(FILE* file, RemContext* context)
         0, context->communicator
     );
 
+    Node* f = malloc(context->nb_vertices * sizeof(Node));
+    Node x = 0;
+
+    for (Node i = 0 ; i < context->nb_vertices ; i++) {
+        f[i] = x;
+        x = f_next(x, context);
+    }
+
     // Read edges from files while sending
     Edge* edges = malloc(FILE_BUFF_SIZE);
     const int max_loads_size = FILE_BUFF_SIZE / sizeof(Edge);
@@ -86,6 +94,9 @@ void send_graph(FILE* file, RemContext* context)
             }
             else {
                 // Insert a regular edge to buffer
+                edges[i].x = f[edges[i].x];
+                edges[i].y = f[edges[i].y];
+
                 assert(edges[i].x < context->nb_vertices);
                 assert(edges[i].y < context->nb_vertices);
 
@@ -133,6 +144,7 @@ void send_graph(FILE* file, RemContext* context)
         }
     } while (!feof(file));
 
+    free(f);
     free(buffer_load);
     free(buffer);
     free(edges);
@@ -469,12 +481,22 @@ void debug_structure(const RemContext* context)
 
     // Display edges
     if (context->process == 0) {
+        Node* g = malloc(context->nb_vertices * sizeof(Node));
+        Node x = 0;
+
+        for (Node i = 0 ; i < context->nb_vertices ; i++) {
+            g[x] = i;
+            x = f_next(x, context);
+        }
+
         // Print number of nodes
         printf("%u\n", context->nb_vertices);
 
         // Print edges
         for (int i = 0 ; i < total_size ; i++)
-            printf("%u %u\n", all_edges[i].x, all_edges[i].y);
+            printf("%u %u\n", g[all_edges[i].x], g[all_edges[i].y]);
+
+        free(g);
     }
 
     free(edges);
