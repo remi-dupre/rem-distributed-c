@@ -37,10 +37,10 @@ int main(int argc, char** argv)
     ungetc(c, input);
 
     // Graph's metadata line
-    uint32_t nb_vertices;
+    Node nb_vertices;
     fgets(line, BUFFER_SIZE, input);
     sscanf(line, "%u", &nb_vertices);
-    fwrite(&nb_vertices, sizeof(uint32_t), 1, output);
+    fwrite(&nb_vertices, sizeof(Node), 1, output);
 
     // Read all edges
     Edge* edges = malloc(BUFFER_SIZE);

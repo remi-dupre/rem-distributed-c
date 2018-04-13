@@ -16,7 +16,7 @@ RemContext* new_context()
     return context;
 }
 
-void change_nb_vertices(RemContext* context, int nb_vertices)
+void change_nb_vertices(RemContext* context, Node nb_vertices)
 {
     assert(context->uf_parent != NULL);
     assert(context->border_graph != NULL);
@@ -25,10 +25,10 @@ void change_nb_vertices(RemContext* context, int nb_vertices)
 
     free(context->uf_parent);
     free(context->border_graph);
-    context->uf_parent = malloc(nb_vertices * sizeof(uint32_t));
+    context->uf_parent = malloc(nb_vertices * sizeof(Node));
     context->border_graph = new_empty_graph(nb_vertices);
 
-    for (int i = 0 ; i < nb_vertices ; i++)
+    for (Node i = 0 ; i < nb_vertices ; i++)
         context->uf_parent[i] = i;
 }
 
@@ -46,8 +46,8 @@ void send_graph(FILE* file, RemContext* context)
     }
 
     // Read number of edges and nodes
-    uint32_t nb_nodes;
-    fread(&nb_nodes, sizeof(uint32_t), 1, file);
+    Node nb_nodes;
+    fread(&nb_nodes, sizeof(Node), 1, file);
 
     // Send the number of nodes to everyone
     change_nb_vertices(context, nb_nodes);
@@ -63,9 +63,9 @@ void send_graph(FILE* file, RemContext* context)
     // Distribute edges among process
     do {
         // Read a chunk from the file
-        const unsigned load_size = fread(edges, sizeof(Edge), max_loads_size, file);
+        const Node load_size = fread(edges, sizeof(Edge), max_loads_size, file);
 
-        for (unsigned i = 0 ; i <= load_size ; i++) {
+        for (Node i = 0 ; i <= load_size ; i++) {
             // Check if we need to insert "stop message"
             const bool is_last_edge = i == load_size && feof(file);
             if (i == load_size && !is_last_edge) {
@@ -203,7 +203,7 @@ bool register_edge(Edge edge, RemContext* context)
                     continue;
                 }
                 else {
-                    uint32_t save_p_y = p(edge.y);
+                    Node save_p_y = p(edge.y);
                     p(edge.y) = p(edge.x);
                     edge.y = save_p_y;
                 }
@@ -214,7 +214,7 @@ bool register_edge(Edge edge, RemContext* context)
                     continue;
                 }
                 else {
-                    uint32_t save_p_x = p(edge.x);
+                    Node save_p_x = p(edge.x);
                     p(edge.x) = p(edge.y);
                     edge.x = save_p_x;
                 }
@@ -231,7 +231,7 @@ bool register_edge(Edge edge, RemContext* context)
     return true;
 }
 
-uint32_t local_root(uint32_t node, RemContext* context)
+Node local_root(Node node, RemContext* context)
 {
     assert(node < context->nb_vertices);
     assert(owner(node) == context->process);
@@ -242,7 +242,7 @@ uint32_t local_root(uint32_t node, RemContext* context)
         return node;
     }
     else {
-        const uint32_t lroot = local_root(p(node), context);
+        const Node lroot = local_root(p(node), context);
         p(node) = lroot;
         return lroot;
     }
@@ -253,18 +253,18 @@ uint32_t local_root(uint32_t node, RemContext* context)
 void filter_border(RemContext* context)
 {
     // Copy disjoint set structure in order not to alter it
-    uint32_t* uf_copy = malloc(context->nb_vertices * sizeof(uint32_t));
+    Node* uf_copy = malloc(context->nb_vertices * sizeof(Node));
 
-    for (unsigned i = 0 ; i < context->nb_vertices ; i++)
+    for (Node i = 0 ; i < context->nb_vertices ; i++)
         uf_copy[i] = context->uf_parent[i];
 
     // Create a new graph in which we will push edges to keep
     Graph* new_border = new_empty_graph(context->nb_vertices);
 
     #define p(x) uf_copy[x]
-    for (int i = 0 ; i < context->border_graph->nb_edges ; i++) {
-        unsigned r_x = context->border_graph->edges[i].x;
-        unsigned r_y = context->border_graph->edges[i].y;
+    for (size_t i = 0 ; i < context->border_graph->nb_edges ; i++) {
+        Node r_x = context->border_graph->edges[i].x;
+        Node r_y = context->border_graph->edges[i].y;
 
         while (p(r_x) != p(r_y)) {
             if (p(r_x) < p(r_y)) {
@@ -274,7 +274,7 @@ void filter_border(RemContext* context)
                     continue;
                 }
                 else {
-                    uint32_t save_p_y = p(r_y);
+                    Node save_p_y = p(r_y);
                     p(r_y) = p(r_x);
                     r_y = save_p_y;
                 }
@@ -286,7 +286,7 @@ void filter_border(RemContext* context)
                     continue;
                 }
                 else {
-                    uint32_t save_p_x = p(r_x);
+                    Node save_p_x = p(r_x);
                     p(r_x) = p(r_y);
                     r_x = save_p_x;
                 }
@@ -304,7 +304,7 @@ void process_distributed(RemContext* context)
     // Enqueue all initial edges as tasks to process
     TaskQueue todo = empty_task_queue();
 
-    for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
+    for (size_t i = 0 ; i < context->border_graph->nb_edges ; i++)
         push_task(&todo, context->border_graph->edges[i]);
 
     // Create buffers of tasks to send to other process
@@ -422,13 +422,13 @@ void debug_structure(const RemContext* context)
 {
     // Collect the list of nodes owned by this process
     int my_size = 0;
-    for (unsigned i = 0 ; i < context->nb_vertices ; i++)
+    for (Node i = 0 ; i < context->nb_vertices ; i++)
         if (owner(i) == context->process)
             my_size++;
 
     Edge* edges = malloc(my_size * sizeof(Edge));
     int edge_pos = 0;
-    for (unsigned i = 0 ; i < context->nb_vertices ; i++) {
+    for (Node i = 0 ; i < context->nb_vertices ; i++) {
         if (owner(i) == context->process) {
             edges[edge_pos].x = i;
             edges[edge_pos].y = context->uf_parent[i];
@@ -470,7 +470,7 @@ void debug_structure(const RemContext* context)
     // Display edges
     if (context->process == 0) {
         // Print number of nodes
-        printf("%d\n", context->nb_vertices);
+        printf("%u\n", context->nb_vertices);
 
         // Print edges
         for (int i = 0 ; i < total_size ; i++)
@@ -489,7 +489,7 @@ void debug_context(const RemContext* context)
     if (context->border_graph == NULL)
         printf("# Border graph has been flushed.\n");
     else
-        printf("# Border graph contains %d edges.\n", context->border_graph->nb_edges);
+        printf("# Border graph contains %ld edges.\n", context->border_graph->nb_edges);
 
     // for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
     //     printf("# (%u, %u)\n", context->border_graph->edges[i].x, context->border_graph->edges[i].y);

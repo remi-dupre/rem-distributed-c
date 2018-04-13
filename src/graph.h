@@ -9,13 +9,19 @@
 #include <string.h>
 #include <stdint.h>
 
+
+/**
+ * Type used to represent a node.
+ */
+typedef uint32_t Node;
+
 /**
  * Representation of an edge as concatenation of two integers.
  */
 typedef struct Edge
 {
-    uint32_t x;
-    uint32_t y;
+    Node x;
+    Node y;
 } Edge;
 
 // Mpi edge's type
@@ -28,8 +34,8 @@ MPI_Datatype MPI_EDGE;
  */
 typedef struct Graph
 {
-    int nb_vertices;
-    int nb_edges;
+    Node nb_vertices;
+    size_t nb_edges;
     int container_size; // the maximum number of edges we can store
     Edge* edges;
 } Graph;
@@ -37,7 +43,7 @@ typedef struct Graph
 /**
  * Create a new graph containing no edge.
  */
-Graph* new_empty_graph(int nb_vertices);
+Graph* new_empty_graph(Node nb_vertices);
 
 /**
  * Delete a graph, free any memory usage.
@@ -57,7 +63,7 @@ void insert_edge(Graph* graph, Edge edge);
 /**
  * Insert a list of edges to an existing graph.
  */
-void insert_edges(Graph* graph, const Edge* edges, int nb_edges);
+void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges);
 
 /**
  * Read a graph from an ascii representation:

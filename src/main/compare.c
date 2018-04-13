@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
         while (fgetc(file2) != '\n');
     ungetc(c, file2);
 
-    uint32_t nb_vertices1;
-    uint32_t nb_vertices2;
+    Node nb_vertices1;
+    Node nb_vertices2;
 
     fscanf(file1, "%u", &nb_vertices1);
     fscanf(file2, "%u", &nb_vertices2);
@@ -41,10 +41,10 @@ int main(int argc, char** argv) {
     }
 
     // Init disjoint set structures
-    uint32_t* uf1 = malloc(nb_vertices1 * sizeof(uint32_t));
-    uint32_t* uf2 = malloc(nb_vertices2 * sizeof(uint32_t));
+    Node* uf1 = malloc(nb_vertices1 * sizeof(Node));
+    Node* uf2 = malloc(nb_vertices2 * sizeof(Node));
 
-    for (unsigned i = 0 ; i < nb_vertices1 ; i++)
+    for (Node i = 0 ; i < nb_vertices1 ; i++)
         uf1[i] = uf2[i] = i;
 
     // Load edges from files
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     fclose(file2);
 
     // Check if graphs are the same
-    for (uint32_t i = 0 ; i < nb_vertices1 ; i++) {
+    for (Node i = 0 ; i < nb_vertices1 ; i++) {
         if (repr(i, uf1) != repr(i, uf2)) {
             printf("The two graph have separate components (%u is represented by %u in the first one and %u in the second one).\n", i, repr(i, uf1), repr(i, uf2));
             return 1;

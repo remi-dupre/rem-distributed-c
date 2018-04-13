@@ -1,13 +1,13 @@
 #include "rem.h"
 
 
-void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent)
+void rem_update(const Edge* edges, size_t nb_edges, Node* uf_parent)
 {
     #define p(x) uf_parent[x]
 
-    for (int i = 0 ; i < nb_edges ; i++) {
-        uint32_t r_x = edges[i].x;
-        uint32_t r_y = edges[i].y;
+    for (size_t i = 0 ; i < nb_edges ; i++) {
+        Node r_x = edges[i].x;
+        Node r_y = edges[i].y;
 
         while (r_x != r_y) {
             if (r_x < r_y) {
@@ -15,7 +15,7 @@ void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent)
                     p(r_y) = r_x;
                 }
                 else {
-                    const int save_pry = p(r_y);
+                    const Node save_pry = p(r_y);
                     p(r_y) = r_x;
                     r_y = save_pry;
                 }
@@ -25,7 +25,7 @@ void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent)
                     p(r_x) = r_y;
                 }
                 else {
-                    const int save_prx = p(r_x);
+                    const Node save_prx = p(r_x);
                     p(r_x) = r_y;
                     r_x = save_prx;
                 }
@@ -36,7 +36,7 @@ void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent)
     #undef p
 }
 
-uint32_t repr(uint32_t node, uint32_t* uf_parent)
+Node repr(Node node, Node* uf_parent)
 {
     #define p(x) uf_parent[x]
 
@@ -44,7 +44,7 @@ uint32_t repr(uint32_t node, uint32_t* uf_parent)
         return node;
     }
     else {
-        const uint32_t root = repr(p(node), uf_parent);
+        const Node root = repr(p(node), uf_parent);
         p(node) = root;
         return root;
     }

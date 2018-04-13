@@ -10,12 +10,12 @@
 /**
  * Updates a disjoint set structure with a set of new Edges.
  */
-void rem_update(const Edge* edges, int nb_edges, uint32_t* uf_parent);
+void rem_update(const Edge* edges, size_t nb_edges, Node* uf_parent);
 
 /**
  * Returns the root of representing edge in a union find.
  * Do standart compression steps.
  */
-uint32_t repr(uint32_t node, uint32_t* uf_parent);
+Node repr(Node node, Node* uf_parent);
 
 #endif

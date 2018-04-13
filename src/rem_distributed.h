@@ -34,8 +34,8 @@ typedef struct RemContext
     int nb_process;
 
     // Structure of the owned nodes
-    unsigned nb_vertices;
-    uint32_t* uf_parent;
+    Node nb_vertices;
+    Node* uf_parent;
     Graph* border_graph;  // graph containing border edges, if not flushed
 } RemContext;
 
@@ -47,7 +47,7 @@ RemContext* new_context();
 /**
  * Change the number of vertices of the full graph.
  */
-void change_nb_vertices(RemContext* context, int nb_vertices);
+void change_nb_vertices(RemContext* context, Node nb_vertices);
 
 /**
  * Spread graph among process.
@@ -69,7 +69,7 @@ bool register_edge(Edge edge, RemContext* context);
  * Get the upper edge owned by current process from given edge.
  * Do compression on the path.
  */
-uint32_t local_root(uint32_t node, RemContext* context);
+Node local_root(Node node, RemContext* context);
 
 /**
  * Remove some edges from the border graph in order to only keep a local covering tree.

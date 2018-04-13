@@ -27,9 +27,9 @@ int main(int argc, char** argv)
     }
 
     // Graph's metadata
-    uint32_t nb_vertices;
+    Node nb_vertices;
     fscanf(input, "%u", &nb_vertices);
-    fwrite(&nb_vertices, sizeof(uint32_t), 1, output);
+    fwrite(&nb_vertices, sizeof(Node), 1, output);
 
     // Read all edges
     Edge* edges = malloc(BUFFER_SIZE);

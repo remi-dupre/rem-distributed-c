@@ -1,7 +1,7 @@
 #include "graph.h"
 
 
-Graph* new_empty_graph(int nb_vertices)
+Graph* new_empty_graph(Node nb_vertices)
 {
     Graph* graph = malloc(sizeof(Graph));
     graph->nb_vertices = nb_vertices;
@@ -34,8 +34,8 @@ void reserve(Graph* graph, int min_size)
 
 void insert_edge(Graph* graph, Edge edge)
 {
-    assert((int) edge.x < graph->nb_vertices);
-    assert((int) edge.y < graph->nb_vertices);
+    assert(edge.x < graph->nb_vertices);
+    assert(edge.y < graph->nb_vertices);
 
     // allocate more space
     reserve(graph, graph->nb_edges + 1);
@@ -43,7 +43,7 @@ void insert_edge(Graph* graph, Edge edge)
     graph->nb_edges++;
 }
 
-void insert_edges(Graph* graph, const Edge* edges, int nb_edges)
+void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges)
 {
     // allocate more space
     reserve(graph, graph->nb_edges + nb_edges);

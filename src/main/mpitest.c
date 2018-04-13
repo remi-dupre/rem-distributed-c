@@ -54,10 +54,10 @@ int main(int argc, char** argv) {
     if (process == 0) {
         FILE* logs = fopen("mpitest.log", "a");
 
-        long long time_sending_ms = (t_end_send.tv_sec - t_start.tv_sec) * 1000;
+        size_t time_sending_ms = (t_end_send.tv_sec - t_start.tv_sec) * 1000;
         time_sending_ms += (t_end_send.tv_usec - t_start.tv_usec) / 1000;
 
-        long long time_process_ms = (t_end_process.tv_sec - t_end_send.tv_sec) * 1000;
+        size_t time_process_ms = (t_end_process.tv_sec - t_end_send.tv_sec) * 1000;
         time_process_ms += (t_end_process.tv_usec - t_end_send.tv_usec) / 1000;
 
         fprintf(logs, ">>");
@@ -65,8 +65,9 @@ int main(int argc, char** argv) {
             fprintf(logs, " %s", argv[i]);
         fprintf(logs, "\n");
 
-        fprintf(logs, "Time spent sending datas: %lldms\n", time_sending_ms);
-        fprintf(logs, "Time spent processing: %lldms\n\n", time_process_ms);
+        fprintf(logs, "System's sizes: node = %luB, edge = %luB\n", sizeof(Node), sizeof(Edge));
+        fprintf(logs, "Time spent sending datas: %ldms\n", time_sending_ms);
+        fprintf(logs, "Time spent processing: %ldms\n\n", time_process_ms);
 
         fclose(logs);
     }
