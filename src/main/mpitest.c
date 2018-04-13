@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include "../rem_distributed.h"
 
@@ -63,9 +64,15 @@ int main(int argc, char** argv) {
         fprintf(logs, ">>");
         for (int i = 0 ; i < argc ; i++)
             fprintf(logs, " %s", argv[i]);
-        fprintf(logs, "\n");
 
+        char time_str[1024];
+        time_t t = time(NULL);
+        strftime(time_str, 1024, "%c", localtime(&t));
+        fprintf(logs, " (%s)\n", time_str);
+
+        fprintf(logs, "Number of process: %d\n", nb_process);
         fprintf(logs, "System's sizes: node = %luB, edge = %luB\n", sizeof(Node), sizeof(Edge));
+        fprintf(logs, "--\n");
         fprintf(logs, "Time spent sending datas: %ldms\n", time_sending_ms);
         fprintf(logs, "Time spent processing: %ldms\n\n", time_process_ms);
 

@@ -6,4 +6,6 @@ addons:
 
 install: make debug
 
-script: python3 run_tests.py
+script:
+ - python3 run_tests.py
+ - cat mpitest.log
