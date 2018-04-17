@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <memory.h>
 #include <mpi.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,12 @@ void delete_graph(Graph* graph);
  * Indicate that a graph will need at least some space.
  */
 void reserve(Graph* graph, int min_size);
+
+/**
+ * Shrink the structure to keep edges from 0 to end_edge-1.
+ * Returns false if no space was released.
+ */
+bool shrink(Graph* graph, size_t end_edge);
 
 /**
  * Insert a new edge to an existing graph.

@@ -9,6 +9,7 @@
 int main(int argc, char** argv) {
     // Timing values
     struct timeval t_start;
+    struct timeval t_end_local;
     struct timeval t_end_send;
     struct timeval t_end_process;
 
@@ -39,10 +40,16 @@ int main(int argc, char** argv) {
         recv_graph(context);
 
     gettimeofday(&t_end_send, NULL);
+
+    flush_buffered_graph(context);
     filter_border(context);
+
+    gettimeofday(&t_end_local, NULL);
+
     process_distributed(context);
 
     gettimeofday(&t_end_process, NULL);
+
     debug_structure(context);
 
     // Close input file
@@ -58,8 +65,11 @@ int main(int argc, char** argv) {
         size_t time_sending_ms = (t_end_send.tv_sec - t_start.tv_sec) * 1000;
         time_sending_ms += (t_end_send.tv_usec - t_start.tv_usec) / 1000;
 
-        size_t time_process_ms = (t_end_process.tv_sec - t_end_send.tv_sec) * 1000;
-        time_process_ms += (t_end_process.tv_usec - t_end_send.tv_usec) / 1000;
+        size_t time_localp_ms = (t_end_local.tv_sec - t_end_send.tv_sec) * 1000;
+        time_localp_ms += (t_end_local.tv_usec - t_end_send.tv_usec) / 1000;
+
+        size_t time_process_ms = (t_end_process.tv_sec - t_end_local.tv_sec) * 1000;
+        time_process_ms += (t_end_process.tv_usec - t_end_local.tv_usec) / 1000;
 
         fprintf(logs, ">>");
         for (int i = 0 ; i < argc ; i++)
@@ -74,7 +84,8 @@ int main(int argc, char** argv) {
         fprintf(logs, "System's sizes: node = %luB, edge = %luB\n", sizeof(Node), sizeof(Edge));
         fprintf(logs, "--\n");
         fprintf(logs, "Time spent sending datas: %ldms\n", time_sending_ms);
-        fprintf(logs, "Time spent processing: %ldms\n\n", time_process_ms);
+        fprintf(logs, "Time spent localy processing: %ldms\n", time_localp_ms);
+        fprintf(logs, "Time spent distributedly processing: %ldms\n\n", time_process_ms);
 
         fclose(logs);
     }

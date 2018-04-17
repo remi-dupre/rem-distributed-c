@@ -40,6 +40,8 @@ typedef struct RemContext
     // Structure of the owned nodes
     Node nb_vertices;
     Node* uf_parent;
+
+    Graph* buffer_graph;  // graph holding edges during communication phase
     Graph* border_graph;  // graph containing border edges, if not flushed
 } RemContext;
 
@@ -65,9 +67,14 @@ void recv_graph(RemContext* context);
 
 /**
  * Register an edge in the context.
- * If this edge indicates that we won't receive anymore edges, return false.
  */
-bool register_edge(Edge edge, RemContext* context);
+void register_edge(Edge edge, RemContext* context);
+
+/**
+ * Read edges from buffer graph, added to tasks or neighbourhood graph.
+ * After theses operations, the buffer graph is empty.
+ */
+void flush_buffered_graph(RemContext* context);
 
 /**
  * Get the upper edge owned by current process from given edge.

@@ -11,7 +11,9 @@ RemContext* new_context()
 
     context->nb_vertices = 0;
     context->uf_parent = malloc(0);
+
     context->border_graph = new_empty_graph(0);
+    context->buffer_graph = new_empty_graph(0);
 
     return context;
 }
@@ -25,8 +27,11 @@ void change_nb_vertices(RemContext* context, Node nb_vertices)
 
     free(context->uf_parent);
     free(context->border_graph);
+    free(context->buffer_graph);
+
     context->uf_parent = malloc(nb_vertices * sizeof(Node));
     context->border_graph = new_empty_graph(nb_vertices);
+    context->buffer_graph = new_empty_graph(nb_vertices);
 
     for (Node i = 0 ; i < nb_vertices ; i++)
         context->uf_parent[i] = i;
@@ -126,14 +131,19 @@ void send_graph(FILE* file, RemContext* context)
                     0, context->communicator
                 );
 
-                // Register owned edges
-                for (int i = 0 ; i < my_size ; i++) {
-                    assert(owner(recv_buff[i].x) == 0 || recv_buff[i].x == context->nb_vertices);
-                    assert(recv_buff[i].x <= context->nb_vertices);
-                    assert(recv_buff[i].y <= context->nb_vertices);
-
-                    register_edge(recv_buff[i], context);
+                // Eliminate fake edge
+                if (recv_buff[my_size-1].x == context->nb_vertices) {
+                    assert(recv_buff[my_size-1].y == context->nb_vertices);
+                    my_size--;
                 }
+
+                // Save owned edges
+                for (int i = 0 ; i < my_size ; i++) {
+                    assert(owner(recv_buff[i].x) == 0);
+                    assert(recv_buff[i].x < context->nb_vertices);
+                    assert(recv_buff[i].y < context->nb_vertices);
+                }
+                insert_edges(context->buffer_graph, recv_buff, my_size);
 
                 free(recv_buff);
 
@@ -183,27 +193,36 @@ void recv_graph(RemContext* context)
             0, context->communicator
         );
 
-        for (int i = 0 ; i < buffer_load ; i++) {
-            assert(owner(buffer[i].x) == context->process || buffer[i].x == context->nb_vertices);
-            assert(buffer[i].x <= context->nb_vertices);
-            assert(buffer[i].y <= context->nb_vertices);
-
-            finished = !register_edge(buffer[i], context);
+        // Just pass if the buffer is empty
+        if (buffer_load == 0) {
+            continue;
         }
+
+        // If there is a fake edge it is the last one
+        if (buffer[buffer_load-1].x == context->nb_vertices) {
+            assert(buffer[buffer_load-1].y == context->nb_vertices);
+            finished = true;
+            buffer_load--;
+        }
+
+        // Save new edges
+        for (int i = 0 ; i < buffer_load ; i++) {
+            assert(owner(buffer[i].x) == context->process);
+            assert(buffer[i].x < context->nb_vertices);
+            assert(buffer[i].y < context->nb_vertices);
+        }
+        insert_edges(context->buffer_graph, buffer, buffer_load);
+
+        for (size_t i = 0 ; i < context->buffer_graph->nb_edges ; i++)
+            assert(context->buffer_graph->edges[i].x < context->nb_vertices);
+
     }
 
     free(buffer);
 }
 
-bool register_edge(Edge edge, RemContext* context)
+void register_edge(Edge edge, RemContext* context)
 {
-    if (edge.x == context->nb_vertices) {
-        // We received a fake edge
-        assert(edge.y == context->nb_vertices);
-        return false;
-    }
-    assert(owner(edge.x) == context->process || owner(edge.y) == context->process);
-
     if (owner(edge.x) == context->process && owner(edge.y) == context->process) {
         // We own this edge, insert it via rem's algorithm
         #define p(x) context->uf_parent[x]
@@ -239,8 +258,17 @@ bool register_edge(Edge edge, RemContext* context)
         // This edge is in the border, we just need to keep it for later
         insert_edge(context->border_graph, edge);
     }
+}
 
-    return true;
+void flush_buffered_graph(RemContext* context)
+{
+    for (size_t i = 0 ; i < context->buffer_graph->nb_edges ; i++) {
+        assert(context->buffer_graph->edges[i].x < context->nb_vertices);
+        register_edge(context->buffer_graph->edges[i], context);
+    }
+
+    free(context->buffer_graph);
+    context->buffer_graph = new_empty_graph(context->nb_vertices);
 }
 
 Node local_root(Node node, RemContext* context)

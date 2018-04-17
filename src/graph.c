@@ -32,6 +32,25 @@ void reserve(Graph* graph, int min_size)
     }
 }
 
+bool shrink(Graph* graph, size_t end_edge)
+{
+    assert(end_edge <= graph->container_size);
+
+    if (end_edge == graph->container_size)
+        return false;
+
+    if (end_edge < graph->nb_edges)
+        graph->nb_edges = end_edge;
+
+    Edge* new_container = malloc(end_edge * sizeof(Edge));
+    memcpy(new_container, graph->edges, end_edge * sizeof(Edge));
+
+    free(graph->edges);
+    graph->edges = new_container;
+
+    return true;
+}
+
 void insert_edge(Graph* graph, Edge edge)
 {
     assert(edge.x < graph->nb_vertices);
@@ -48,7 +67,7 @@ void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges)
     // allocate more space
     reserve(graph, graph->nb_edges + nb_edges);
 
-    memcpy(&graph->edges[graph->nb_edges], edges, nb_edges);
+    memcpy(&graph->edges[graph->nb_edges], edges, nb_edges * sizeof(Edge));
     graph->nb_edges += nb_edges;
 }
 
