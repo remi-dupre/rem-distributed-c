@@ -50,10 +50,10 @@ int main(int argc, char** argv) {
     // Load edges from files
     Edge edge;
 
-    while (fscanf(file1, "%u %u", &edge.x, &edge.y) != EOF)
+    while (fscanf(file1, "%u %u", &edge.x, &edge.y) > 0)
         rem_update(&edge, 1, uf1);
 
-    while (fscanf(file2, "%u %u", &edge.x, &edge.y) != EOF)
+    while (fscanf(file2, "%u %u", &edge.x, &edge.y) > 0)
         rem_update(&edge, 1, uf2);
 
     fclose(file1);

@@ -10,9 +10,10 @@ inputs/*.out
 build/
 
 # Binary files
-compare
 bin-to-graph
-graph-to-bin
-mtx-to-bin
+compare
 generate
+graph-to-bin
 mpitest
+mtx-to-bin
+rem

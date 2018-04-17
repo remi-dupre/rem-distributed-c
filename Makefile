@@ -5,7 +5,8 @@ TARGETS =\
 	bin-to-graph\
 	graph-to-bin\
 	mtx-to-bin\
-	mpitest
+	mpitest\
+	rem
 
 # C compiler
 CXX = mpicc
