@@ -1,7 +1,10 @@
 #include <mpi.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "../rem_distributed.h"
 
@@ -60,8 +63,15 @@ int main(int argc, char** argv) {
 
     // Debug timings
     if (process == 0) {
+        struct stat buffer;
+        bool csv_head = stat("mpitest.csv", &buffer);
+
         FILE* logs = fopen("mpitest.log", "a");
         FILE* csv = fopen("mpitest.csv", "a");
+
+        if (csv_head) {
+            fprintf(csv, "start time;command;np;ipc;sending;local;distributed\n");
+        }
 
         size_t time_sending_ms = (t_end_send.tv_sec - t_start.tv_sec) * 1000;
         time_sending_ms += (t_end_send.tv_usec - t_start.tv_usec) / 1000;
