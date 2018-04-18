@@ -37,7 +37,7 @@ typedef struct Graph
 {
     Node nb_vertices;
     size_t nb_edges;
-    int container_size; // the maximum number of edges we can store
+    size_t container_size; // the maximum number of edges we can store
     Edge* edges;
 } Graph;
 
@@ -54,7 +54,7 @@ void delete_graph(Graph* graph);
 /**
  * Indicate that a graph will need at least some space.
  */
-void reserve(Graph* graph, int min_size);
+void reserve(Graph* graph, size_t min_size);
 
 /**
  * Shrink the structure to keep edges from 0 to end_edge-1.

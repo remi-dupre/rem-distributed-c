@@ -1,12 +1,15 @@
 #include "graph.h"
 
+#define INIT_SIZE 10000
+
 
 Graph* new_empty_graph(Node nb_vertices)
 {
     Graph* graph = malloc(sizeof(Graph));
     graph->nb_vertices = nb_vertices;
-    graph->nb_edges = graph->container_size = 0;
-    graph->edges = malloc(0);
+    graph->nb_edges = 0;
+    graph->container_size = INIT_SIZE;
+    graph->edges = malloc(INIT_SIZE * sizeof(Edge));
     return graph;
 }
 
@@ -16,7 +19,7 @@ void delete_graph(Graph* graph)
     free(graph);
 }
 
-void reserve(Graph* graph, int min_size)
+void reserve(Graph* graph, size_t min_size)
 {
     if (min_size > graph->container_size) {
         while (min_size > graph->container_size)
