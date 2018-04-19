@@ -43,11 +43,13 @@ void send_graph(FILE* file, RemContext* context)
 
     int* buffer_load = malloc(context->nb_process * sizeof(int));
     int* buffer_disp = malloc(context->nb_process * sizeof(int));
+    size_t* edges_received = malloc(context->nb_process * sizeof(size_t));
     Edge* buffer = malloc(context->nb_process * (MAX_COM_SIZE / sizeof(Edge)) * sizeof(Edge));
 
     for (int i = 0 ; i < context->nb_process ; i++) {
         buffer_load[i] = 0;
         buffer_disp[i] = i * (MAX_COM_SIZE / sizeof(Edge));
+        edges_received[i] = 0;
     }
 
     // Read number of edges and nodes
@@ -81,6 +83,8 @@ void send_graph(FILE* file, RemContext* context)
         for (Node i = 0 ; i <= load_size ; i++) {
             // Check if we need to insert "stop message"
             const bool is_last_edge = i == load_size && feof(file);
+            int edge_owner;
+
             if (i == load_size && !is_last_edge) {
                 // This last step of the loop shouldn't insert anything
                 break;
@@ -106,15 +110,20 @@ void send_graph(FILE* file, RemContext* context)
                 assert(edges[i].y < context->nb_vertices);
 
                 // Add datas to buffer
-                const int edge_owner = owner(edges[i].x);
+                const int owner_x = owner(edges[i].x);
+                const int owner_y = owner(edges[i].y);
+
+                edge_owner = (edges_received[owner_x] < edges_received[owner_y]) ? owner_x : owner_y;
+                edges_received[edge_owner]++;
+
                 const int buff_pos = buffer_disp[edge_owner] + buffer_load[edge_owner];
                 memcpy(&buffer[buff_pos], &edges[i], sizeof(Edge));
                 buffer_load[edge_owner]++;
             }
 
-            assert(buffer_load[owner(edges[i].x)] * sizeof(Edge) <= MAX_COM_SIZE);
+            assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
 
-            if (is_last_edge || (buffer_load[owner(edges[i].x)] + 2) * sizeof(Edge) > MAX_COM_SIZE) {
+            if (is_last_edge || (buffer_load[edge_owner] + 2) * sizeof(Edge) > MAX_COM_SIZE) {
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
@@ -139,9 +148,15 @@ void send_graph(FILE* file, RemContext* context)
 
                 // Save owned edges
                 for (int i = 0 ; i < my_size ; i++) {
-                    assert(owner(recv_buff[i].x) == 0);
+                    assert(owner(recv_buff[i].x) == 0 || owner(recv_buff[i].y) == 0);
                     assert(recv_buff[i].x < context->nb_vertices);
                     assert(recv_buff[i].y < context->nb_vertices);
+
+                    if (owner(recv_buff[i].x) != 0) {
+                        const Node z = recv_buff[i].x;
+                        recv_buff[i].x = recv_buff[i].y;
+                        recv_buff[i].y = z;
+                    }
                 }
                 insert_edges(context->buffer_graph, recv_buff, my_size);
 
@@ -207,9 +222,15 @@ void recv_graph(RemContext* context)
 
         // Save new edges
         for (int i = 0 ; i < buffer_load ; i++) {
-            assert(owner(buffer[i].x) == context->process);
+            assert(owner(buffer[i].x) == context->process || owner(buffer[i].y) == context->process);
             assert(buffer[i].x < context->nb_vertices);
             assert(buffer[i].y < context->nb_vertices);
+
+            if (owner(buffer[i].x) != context->process) {
+                const Node z = buffer[i].x;
+                buffer[i].x = buffer[i].y;
+                buffer[i].y = z;
+            }
         }
         insert_edges(context->buffer_graph, buffer, buffer_load);
 
