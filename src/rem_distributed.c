@@ -341,19 +341,23 @@ void filter_border(RemContext* context)
 
 void process_distributed(RemContext* context)
 {
+    const RemContext context_cpy = *context;
+    const size_t nb_edges = context_cpy.border_graph->nb_edges;
+    const Edge* edges_cpy = context_cpy.border_graph->edges;
+
     // Enqueue all initial edges as tasks to process
     TaskQueue todo = empty_task_queue();
 
-    for (size_t i = 0 ; i < context->border_graph->nb_edges ; i++)
-        push_task(&todo, context->border_graph->edges[i]);
+    for (size_t i = 0 ; i < nb_edges ; i++)
+        push_task(&todo, edges_cpy[i]);
 
     // Create buffers of tasks to send to other process
-    Edge* to_send = malloc(context->nb_process * MAX_LOCAL_ITER * sizeof(Edge));
-    int* to_send_sizes = malloc(context->nb_process * sizeof(int));
-    int* to_send_displ = malloc(context->nb_process * sizeof(int));
-    int* fake_sizes = malloc(context->nb_process * sizeof(int));
+    Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * sizeof(Edge));
+    int* to_send_sizes = malloc(context_cpy.nb_process * sizeof(int));
+    int* to_send_displ = malloc(context_cpy.nb_process * sizeof(int));
+    int* fake_sizes = malloc(context_cpy.nb_process * sizeof(int));
 
-    for (int p = 0 ; p < context->nb_process ; p++) {
+    for (int p = 0 ; p < context_cpy.nb_process ; p++) {
         to_send_sizes[p] = 0;
         to_send_displ[p] = p * MAX_LOCAL_ITER;
         fake_sizes[p] = -1;
@@ -365,30 +369,31 @@ void process_distributed(RemContext* context)
         bool did_nothing = is_empty(todo);
 
         // Execute tasks from the queue
-        #define p(x) (context->uf_parent[(x)])
+        #define p(x) (context_cpy.uf_parent[(x)])
+        #define own(x) ((int) (x) % context_cpy.nb_process)
         #define lroot(x) (local_root(x, context))
 
         for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty(todo) ; t++) {
             Edge r = pop_task(&todo);
-            assert(owner(r.x) == context->process);
+            assert(own(r.x) == context_cpy.process);
 
             r.x = lroot(r.x);
 
             if (p(r.x) < r.y) {
-                int to_send_pos = to_send_displ[owner(r.y)] + to_send_sizes[owner(r.y)];
+                int to_send_pos = to_send_displ[own(r.y)] + to_send_sizes[own(r.y)];
                 to_send[to_send_pos].x = r.y;
                 to_send[to_send_pos].y = p(r.x);
-                to_send_sizes[owner(r.y)] += 1;
+                to_send_sizes[own(r.y)] += 1;
             }
             else if (p(r.x) > r.y) {
                 if (p(r.x) == r.x) {
                     p(r.x) = r.y;
                 }
                 else {
-                    int to_send_pos = to_send_displ[owner(p(r.x))] + to_send_sizes[owner(p(r.x))];
+                    int to_send_pos = to_send_displ[own(p(r.x))] + to_send_sizes[own(p(r.x))];
                     to_send[to_send_pos].x = p(r.x);
                     to_send[to_send_pos].y = r.y;
-                    to_send_sizes[owner(p(r.x))] += 1;
+                    to_send_sizes[own(p(r.x))] += 1;
 
                     p(r.x) = r.y;
                 }
@@ -397,6 +402,7 @@ void process_distributed(RemContext* context)
         }
 
         #undef lroot
+        #undef own
         #undef p
 
         // Share buffer sizes with other process
@@ -405,12 +411,12 @@ void process_distributed(RemContext* context)
         MPI_Alltoall(
             did_nothing ? fake_sizes : to_send_sizes, 1, MPI_INT,
             recv_sizes, 1, MPI_INT,
-            context->communicator
+            context_cpy.communicator
         );
 
         int end_count = 0; // number of process who had nothing to do
         int total_size = 0;
-        for (int p = 0 ; p < context->nb_process ; p++) {
+        for (int p = 0 ; p < context_cpy.nb_process ; p++) {
             recv_displ[p] = total_size;
 
             if (recv_sizes[p] == -1) {
@@ -423,7 +429,7 @@ void process_distributed(RemContext* context)
         }
 
         // If no one sends data, the algorithm is done
-        if (end_count == context->nb_process) {
+        if (end_count == context_cpy.nb_process) {
             free(recv_sizes);
             free(recv_displ);
             break;
@@ -434,7 +440,7 @@ void process_distributed(RemContext* context)
         MPI_Alltoallv(
             to_send, to_send_sizes, to_send_displ, MPI_EDGE,
             recv_datas, recv_sizes, recv_displ, MPI_EDGE,
-            context->communicator
+            context_cpy.communicator
         );
 
         // Load tasks in the queue
@@ -442,7 +448,7 @@ void process_distributed(RemContext* context)
             push_task(&todo, recv_datas[t]);
 
         // Empty send buffers
-        for (int p = 0 ; p < context->nb_process ; p++)
+        for (int p = 0 ; p < context_cpy.nb_process ; p++)
             to_send_sizes[p] = 0;
 
         // Free reception buffers
