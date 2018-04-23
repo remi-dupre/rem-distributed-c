@@ -15,4 +15,4 @@
  */
 long time_ms();
 
-#endif TOOLS
+#endif

@@ -42,12 +42,12 @@ int main(int argc, char** argv) {
     else
         recv_graph(context);
 
-    t_end_local = time_ms();
+    t_end_send = time_ms();
 
     flush_buffered_graph(context);
     filter_border(context);
 
-    t_end_send = time_ms();
+    t_end_local = time_ms();
 
     process_distributed(context);
 
