@@ -3,11 +3,13 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <mpi.h>
 #include <stdio.h>
 
 #include "graph.h"
 #include "task.h"
+#include "tools.h"
 
 
 // Size of chunks to load from files
@@ -21,6 +23,7 @@
 
 // Function giving the owner of a process
 #define owner(node) (((int) node) % context->nb_process)
+
 
 // Function giving the rank of a node, defined as a recursive sequence
 // f[0] = 0 and f[n+1] = f_next(f[n])

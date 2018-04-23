@@ -385,9 +385,11 @@ void process_distributed(RemContext* context)
     }
 
     // Processing loop that stops when every process has no more data to send
+    int iteration = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
         bool did_nothing = is_empty(todo);
+        iteration++;
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
@@ -429,11 +431,17 @@ void process_distributed(RemContext* context)
         // Share buffer sizes with other process
         int* recv_sizes = malloc(context->nb_process * sizeof(int));
         int* recv_displ = malloc(context->nb_process * sizeof(int));
+        long time_waiting = time_ms();
         MPI_Alltoall(
             did_nothing ? fake_sizes : to_send_sizes, 1, MPI_INT,
             recv_sizes, 1, MPI_INT,
             context_cpy.communicator
         );
+        time_waiting = time_ms() - time_waiting;
+        FILE* file;
+        while ((file = fopen("mpitest.time.log", "a")) == NULL);
+        fprintf(file, "%d;%d;%ld\n", context->process, iteration, time_waiting);
+        fclose(file);
 
         int end_count = 0; // number of process who had nothing to do
         int total_size = 0;
