@@ -15,11 +15,13 @@
 // Size of chunks to load from files
 #define FILE_BUFF_SIZE 8192
 
-// Maximum size of sent buffers
-#define MAX_COM_SIZE 8192
+// Maximum size of sent buffers while sending graph
+#define MAX_COM_SIZE 64000
 
 // Maximum tasks poped before next communcation phase
-#define MAX_LOCAL_ITER 8192
+#ifndef MAX_LOCAL_ITER
+    #define MAX_LOCAL_ITER 8192
+#endif
 
 // Function giving the owner of a process
 #define owner(node) (((int) node) % context->nb_process)
