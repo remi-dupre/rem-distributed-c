@@ -80,12 +80,6 @@ void register_edge(Edge edge, RemContext* context);
 void flush_buffered_graph(RemContext* context);
 
 /**
- * Get the upper edge owned by current process from given edge.
- * Do compression on the path.
- */
-Node local_root(Node node, RemContext* context);
-
-/**
  * Remove some edges from the border graph in order to only keep a local covering tree.
  */
 void filter_border(RemContext* context);

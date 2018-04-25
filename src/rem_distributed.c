@@ -292,25 +292,6 @@ void flush_buffered_graph(RemContext* context)
     context->buffer_graph = new_empty_graph(context->nb_vertices);
 }
 
-Node local_root(Node node, RemContext* context)
-{
-    assert(node < context->nb_vertices);
-    assert(owner(node) == context->process);
-
-    #define p(x) (context->uf_parent[x])
-
-    if (owner(p(node)) != context->process || p(node) == node) {
-        return node;
-    }
-    else {
-        const Node lroot = local_root(p(node), context);
-        p(node) = lroot;
-        return lroot;
-    }
-
-    #undef p
-}
-
 void filter_border(RemContext* context)
 {
     // Copy disjoint set structure in order not to alter it
@@ -360,6 +341,26 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
+Node local_root(Node node, Node* uf_parent, int process, int nb_process)
+{
+    #define own(x) ((int) (x) % nb_process)
+    #define p(x) (uf_parent[x])
+
+    assert(own(node) == process);
+
+    if (own(p(node)) != process || p(node) == node) {
+        return node;
+    }
+    else {
+        const Node lroot = local_root(p(node), uf_parent, process, nb_process);
+        p(node) = lroot;
+        return lroot;
+    }
+
+    #undef p
+    #undef own
+}
+
 void process_distributed(RemContext* context)
 {
     const RemContext context_cpy = *context;
@@ -394,7 +395,7 @@ void process_distributed(RemContext* context)
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
         #define own(x) ((int) (x) % context_cpy.nb_process)
-        #define lroot(x) (local_root(x, context))
+        #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
         for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty(todo) ; t++) {
             Edge r = pop_task(&todo);
@@ -453,10 +454,10 @@ void process_distributed(RemContext* context)
             }
         }
 
-        FILE* file;
-        while ((file = fopen("mpitest.time.log", "a")) == NULL);
-        fprintf(file, "%d;%d;%ld;%d\n", context->process, iteration, time_waiting, total_size);
-        fclose(file);
+        // FILE* file;
+        // while ((file = fopen("mpitest.time.log", "a")) == NULL);
+        // fprintf(file, "%d;%d;%ld;%d\n", context->process, iteration, time_waiting, total_size);
+        // fclose(file);
 
         // If no one sends data, the algorithm is done
         if (end_count == context_cpy.nb_process) {
