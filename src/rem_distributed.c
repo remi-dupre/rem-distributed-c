@@ -438,10 +438,6 @@ void process_distributed(RemContext* context)
             context_cpy.communicator
         );
         time_waiting = time_ms() - time_waiting;
-        FILE* file;
-        while ((file = fopen("mpitest.time.log", "a")) == NULL);
-        fprintf(file, "%d;%d;%ld\n", context->process, iteration, time_waiting);
-        fclose(file);
 
         int end_count = 0; // number of process who had nothing to do
         int total_size = 0;
@@ -456,6 +452,11 @@ void process_distributed(RemContext* context)
                 total_size += recv_sizes[p];
             }
         }
+
+        FILE* file;
+        while ((file = fopen("mpitest.time.log", "a")) == NULL);
+        fprintf(file, "%d;%d;%ld;%d\n", context->process, iteration, time_waiting, total_size);
+        fclose(file);
 
         // If no one sends data, the algorithm is done
         if (end_count == context_cpy.nb_process) {
