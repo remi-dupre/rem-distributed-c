@@ -245,14 +245,18 @@ void recv_graph(RemContext* context)
 void flush_buffered_graph(RemContext* context)
 {
     int process = context->process;
+    int nb_process = context->nb_process;
+
     Node* uf_parent = context->uf_parent;
     size_t nb_edges = context->buffer_graph->nb_edges;
     Edge* edges = context->buffer_graph->edges;
 
+    #define own(x) ((x) % nb_process)
+
     for (size_t i = 0 ; i < nb_edges ; i++) {
         Edge edge = edges[i];
 
-        if (owner(edge.x) == process && owner(edge.y) == process) {
+        if (own(edge.x) == process && own(edge.y) == process) {
             // We own this edge, insert it via rem's algorithm
             #define p(x) uf_parent[x]
 
@@ -291,11 +295,13 @@ void flush_buffered_graph(RemContext* context)
 
     free(context->buffer_graph);
     context->buffer_graph = new_empty_graph(context->nb_vertices);
+
+    #undef own
 }
 
 void filter_border(RemContext* context)
 {
-    int nb_edges = context->border_graph->nb_edges;
+    size_t nb_edges = context->border_graph->nb_edges;
     Edge* edges = context->border_graph->edges;
 
     // Copy disjoint set structure in order not to alter it
