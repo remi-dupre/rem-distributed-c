@@ -71,11 +71,6 @@ void send_graph(FILE* file, RemContext* context);
 void recv_graph(RemContext* context);
 
 /**
- * Register an edge in the context.
- */
-void register_edge(Edge edge, RemContext* context);
-
-/**
  * Read edges from buffer graph, added to tasks or neighbourhood graph.
  * After theses operations, the buffer graph is empty.
  */

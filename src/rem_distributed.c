@@ -242,50 +242,51 @@ void recv_graph(RemContext* context)
     free(buffer);
 }
 
-void register_edge(Edge edge, RemContext* context)
-{
-    if (owner(edge.x) == context->process && owner(edge.y) == context->process) {
-        // We own this edge, insert it via rem's algorithm
-        #define p(x) context->uf_parent[x]
-
-        while (p(edge.x) != p(edge.y)) {
-            if (p(edge.x) < p(edge.y)) {
-                if (p(edge.y) == edge.y) {
-                    p(edge.y) = p(edge.x);
-                    continue;
-                }
-                else {
-                    Node save_p_y = p(edge.y);
-                    p(edge.y) = p(edge.x);
-                    edge.y = save_p_y;
-                }
-            }
-            else {
-                if (p(edge.x) == edge.x) {
-                    p(edge.x) = p(edge.y);
-                    continue;
-                }
-                else {
-                    Node save_p_x = p(edge.x);
-                    p(edge.x) = p(edge.y);
-                    edge.x = save_p_x;
-                }
-            }
-        }
-
-        #undef p
-    }
-    else {
-        // This edge is in the border, we just need to keep it for later
-        insert_edge(context->border_graph, edge);
-    }
-}
-
 void flush_buffered_graph(RemContext* context)
 {
-    for (size_t i = 0 ; i < context->buffer_graph->nb_edges ; i++) {
-        assert(context->buffer_graph->edges[i].x < context->nb_vertices);
-        register_edge(context->buffer_graph->edges[i], context);
+    int process = context->process;
+    Node* uf_parent = context->uf_parent;
+    size_t nb_edges = context->buffer_graph->nb_edges;
+    Edge* edges = context->buffer_graph->edges;
+
+    for (size_t i = 0 ; i < nb_edges ; i++) {
+        Edge edge = edges[i];
+
+        if (owner(edge.x) == process && owner(edge.y) == process) {
+            // We own this edge, insert it via rem's algorithm
+            #define p(x) uf_parent[x]
+
+            while (p(edge.x) != p(edge.y)) {
+                if (p(edge.x) < p(edge.y)) {
+                    if (p(edge.y) == edge.y) {
+                        p(edge.y) = p(edge.x);
+                        continue;
+                    }
+                    else {
+                        Node save_p_y = p(edge.y);
+                        p(edge.y) = p(edge.x);
+                        edge.y = save_p_y;
+                    }
+                }
+                else {
+                    if (p(edge.x) == edge.x) {
+                        p(edge.x) = p(edge.y);
+                        continue;
+                    }
+                    else {
+                        Node save_p_x = p(edge.x);
+                        p(edge.x) = p(edge.y);
+                        edge.x = save_p_x;
+                    }
+                }
+            }
+
+            #undef p
+        }
+        else {
+            // This edge is in the border, we just need to keep it for later
+            insert_edge(context->border_graph, edge);
+        }
     }
 
     free(context->buffer_graph);
