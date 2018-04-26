@@ -356,14 +356,21 @@ static inline Node local_root(Node node, Node* uf_parent, int process, int nb_pr
     #define own(x) ((int) (x) % nb_process)
     #define p(x) (uf_parent[x])
 
-    Node ancesters[100];
+    static int anc_container_size = 0;
+    static Node* ancesters = NULL;
     int nb_ancesters = 0;
 
     while (p(node) != node && own(p(node)) == process) {
-        if (nb_ancesters < 100) {
-            ancesters[nb_ancesters] = node;
-            nb_ancesters++;
+        if (nb_ancesters == anc_container_size) {
+            Node* new_container = malloc((2 * anc_container_size + 100) * sizeof(Node));
+            memcpy(new_container, ancesters, anc_container_size);
+            anc_container_size = 2 * anc_container_size + 100;
+
+            if (ancesters) free(ancesters);
+            ancesters = new_container;
         }
+        ancesters[nb_ancesters] = node;
+        nb_ancesters++;
 
         node = p(node);
     }
