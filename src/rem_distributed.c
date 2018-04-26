@@ -308,9 +308,7 @@ void filter_border(RemContext* context)
 
     // Copy disjoint set structure in order not to alter it
     Node* uf_copy = malloc(context->nb_vertices * sizeof(Node));
-
-    for (Node i = 0 ; i < context->nb_vertices ; i++)
-        uf_copy[i] = context->uf_parent[i];
+    memcpy(uf_copy, context->uf_parent, context->nb_vertices * sizeof(Node));
 
     // Create a new graph in which we will push edges to keep
     Graph* new_border = new_empty_graph(context->nb_vertices);
