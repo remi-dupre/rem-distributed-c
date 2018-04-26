@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
     Edge* buffer = malloc(BUFF_SIZE * sizeof(Edge));
 
     do {
-        loaded = fread(buffer, sizeof(Edge), BUFF_SIZE, input);
         insert_edges(graph, buffer, loaded);
+        loaded = fread(buffer, sizeof(Edge), BUFF_SIZE, input);
     } while (loaded > 0);
 
     // Execute raw REM
