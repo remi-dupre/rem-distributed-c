@@ -18,7 +18,7 @@ void push_task(TaskHeap* heap, Edge task)
 {
     if (heap->container_size == heap->nb_tasks) {
         Edge* new_container = malloc(heap->container_size * 2);
-        memcpy(new_container, heap->tasks, heap->container_size);
+        memcpy(new_container, heap->tasks, heap->container_size * sizeof(Edge));
 
         free(heap->tasks);
         heap->tasks = new_container;

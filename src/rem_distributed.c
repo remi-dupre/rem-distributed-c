@@ -295,6 +295,9 @@ void flush_buffered_graph(RemContext* context)
 
 void filter_border(RemContext* context)
 {
+    int nb_edges = context->border_graph->nb_edges;
+    Edge* edges = context->border_graph->edges;
+
     // Copy disjoint set structure in order not to alter it
     Node* uf_copy = malloc(context->nb_vertices * sizeof(Node));
 
@@ -305,15 +308,15 @@ void filter_border(RemContext* context)
     Graph* new_border = new_empty_graph(context->nb_vertices);
 
     #define p(x) uf_copy[x]
-    for (size_t i = 0 ; i < context->border_graph->nb_edges ; i++) {
-        Node r_x = context->border_graph->edges[i].x;
-        Node r_y = context->border_graph->edges[i].y;
+    for (size_t i = 0 ; i < nb_edges ; i++) {
+        Node r_x = edges[i].x;
+        Node r_y = edges[i].y;
 
         while (p(r_x) != p(r_y)) {
             if (p(r_x) < p(r_y)) {
                 if (r_y == p(r_y)) {
                     p(r_y) = p(r_x);
-                    insert_edge(new_border, context->border_graph->edges[i]);
+                    insert_edge(new_border, edges[i]);
                     continue;
                 }
                 else {
@@ -325,7 +328,7 @@ void filter_border(RemContext* context)
             else {
                 if (r_x == p(r_x)) {
                     p(r_x) = p(r_y);
-                    insert_edge(new_border, context->border_graph->edges[i]);
+                    insert_edge(new_border, edges[i]);
                     continue;
                 }
                 else {
