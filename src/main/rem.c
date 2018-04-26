@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 #include "../rem.h"
+#include "../tools.h"
 
 
 // Number of edges to load simultaneously
-#define BUFF_SIZE 1024
+#define BUFF_SIZE 4096
 
 
 int main(int argc, char** argv) {
@@ -23,14 +24,26 @@ int main(int argc, char** argv) {
     for (Node i = 0 ; i < nb_vertices ; i++)
         uf_parent[i] = i;
 
+    // Catch graph from file
+    Graph* graph = new_empty_graph(nb_vertices);
+
     // Read file by chunks
     int loaded = 0;
     Edge* buffer = malloc(BUFF_SIZE * sizeof(Edge));
 
     do {
         loaded = fread(buffer, sizeof(Edge), BUFF_SIZE, input);
-        rem_update(buffer, loaded, uf_parent);
+        insert_edges(graph, buffer, loaded);
     } while (loaded > 0);
+
+    // Execute raw REM
+    long time = time_ms();
+    rem_update(graph->edges, graph->nb_edges, uf_parent);
+    time = time_ms() - time;
+
+    FILE* logs = fopen("mpitest.log", "a");
+    fprintf(logs, ">> Basic algorithm\n");
+    fprintf(logs, "%ld ms\n\n", time);
 
     printf("%u\n", nb_vertices);
     for (Node i = 0 ; i < nb_vertices ; i++) {

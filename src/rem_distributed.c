@@ -353,7 +353,7 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
-inline Node local_root(Node node, Node* uf_parent, int process, int nb_process)
+static inline Node local_root(Node node, Node* uf_parent, int process, int nb_process)
 {
     #define own(x) ((int) (x) % nb_process)
     #define p(x) (uf_parent[x])

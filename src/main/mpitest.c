@@ -1,7 +1,7 @@
 #include <mpi.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include<sys/stat.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
