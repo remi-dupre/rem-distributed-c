@@ -369,7 +369,7 @@ void process_distributed(RemContext* context)
     const Edge* edges_cpy = context_cpy.border_graph->edges;
 
     // Enqueue all initial edges as tasks to process
-    TaskQueue todo = empty_task_queue();
+    TaskHeap todo = empty_task_heap();
 
     for (size_t i = 0 ; i < nb_edges ; i++)
         push_task(&todo, edges_cpy[i]);
@@ -390,7 +390,7 @@ void process_distributed(RemContext* context)
     int iteration = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
-        bool did_nothing = is_empty(todo);
+        bool did_nothing = is_empty_heap(todo);
         iteration++;
 
         // Execute tasks from the queue
@@ -398,7 +398,7 @@ void process_distributed(RemContext* context)
         #define own(x) ((int) (x) % context_cpy.nb_process)
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
-        for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty(todo) ; t++) {
+        for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty_heap(todo) ; t++) {
             Edge r = pop_task(&todo);
             assert(own(r.x) == context_cpy.process);
 

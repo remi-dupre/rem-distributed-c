@@ -4,41 +4,30 @@
 #include "graph.h"
 
 
-/**
- * Represent a single item in the queue.
- */
-typedef struct TaskQueueItem
+typedef struct TaskHeap
 {
-    Edge task;            // value of this item
-    struct TaskQueueItem* next;  // next item of the queue
-} TaskQueueItem;
-
-/**
- * Represent a queue, items or placed in separate sections of memory.
- */
-typedef struct TaskQueue
-{
-    TaskQueueItem* head;
-    TaskQueueItem* tail;
-} TaskQueue;
+    Edge* tasks;
+    size_t nb_tasks;
+    size_t container_size;
+} TaskHeap;
 
 
 /**
- * Create a new empty queue of tasks.
+ * Create a new empty task heap.
  */
-TaskQueue empty_task_queue();
+TaskHeap empty_task_heap();
 
 /**
- * Check if a queue is empty.
+ * Check if the heap is empty.
  */
-bool is_empty(TaskQueue queue);
+#define is_empty_heap(heap) ((heap).nb_tasks == 0)
 
 /**
- * Add an element to the queue.
+ * Add an element to the heap.
  */
-void push_task(TaskQueue* queue, Edge task);
+void push_task(TaskHeap* heap, Edge task);
 
 /**
- * Pop an element from the queue.
+ * Pop an element from the heap.
  */
-Edge pop_task(TaskQueue* queue);
+Edge pop_task(TaskHeap* heap);

@@ -1,43 +1,38 @@
 #include "task.h"
 
 
-TaskQueue empty_task_queue()
+#define INIT_SIZE 10000  // Initial container size of a task heap
+
+
+TaskHeap empty_task_heap()
 {
-    TaskQueue queue = {
-        .head = NULL,
-        .tail = NULL
+    TaskHeap heap = {
+        .tasks = malloc(INIT_SIZE * sizeof(Edge)),
+        .nb_tasks = 0,
+        .container_size = INIT_SIZE
     };
-    return queue;
+    return heap;
 }
 
-bool is_empty(TaskQueue queue)
+void push_task(TaskHeap* heap, Edge task)
 {
-    return queue.head == NULL;
-}
+    if (heap->container_size == heap->nb_tasks) {
+        Edge* new_container = malloc(heap->container_size * 2);
+        memcpy(new_container, heap->tasks, heap->container_size);
 
-void push_task(TaskQueue* queue, Edge task)
-{
-    TaskQueueItem* queue_item = malloc(sizeof(TaskQueueItem));
-    queue_item->task = task;
-    queue_item->next = NULL;
-
-    if (is_empty(*queue)) {
-        queue->head = queue->tail = queue_item;
+        free(heap->tasks);
+        heap->tasks = new_container;
+        heap->container_size *= 2;
     }
-    else {
-        assert(queue->tail->next == NULL);
-        queue->tail->next = queue_item;
-        queue->tail = queue_item;
-    }
+
+    heap->tasks[heap->nb_tasks] = task;
+    heap->nb_tasks++;
 }
 
-Edge pop_task(TaskQueue* queue)
+Edge pop_task(TaskHeap* heap)
 {
-    assert(!is_empty(*queue));
+    assert(!is_empty_heap(*heap));
 
-    TaskQueueItem queue_item = *queue->head;
-    free(queue->head);
-    queue->head = queue_item.next;
-
-    return queue_item.task;
+    heap->nb_tasks--;
+    return heap->tasks[heap->nb_tasks];
 }
