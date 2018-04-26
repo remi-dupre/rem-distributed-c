@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     } while (loaded > 0);
 
     // Execute raw REM
-    long time = time_ms();
+    time_t time = time_ms();
     rem_update(graph->edges, graph->nb_edges, uf_parent);
     time = time_ms() - time;
 
