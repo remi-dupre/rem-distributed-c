@@ -253,7 +253,7 @@ void flush_buffered_graph(RemContext* context)
     size_t nb_edges = context->buffer_graph->nb_edges;
     Edge* edges = context->buffer_graph->edges;
 
-    #define own(x) ((x) % nb_process)
+    #define own(x) ((int) (x) % nb_process)
 
     for (size_t i = 0 ; i < nb_edges ; i++) {
         Edge edge = edges[i];
@@ -353,21 +353,27 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
-Node local_root(Node node, Node* uf_parent, int process, int nb_process)
+static Node local_root(Node node, Node* uf_parent, int process, int nb_process)
 {
     #define own(x) ((int) (x) % nb_process)
     #define p(x) (uf_parent[x])
 
-    assert(own(node) == process);
+    Node ancesters[100];
+    int nb_ancesters = 0;
 
-    if (own(p(node)) != process || p(node) == node) {
-        return node;
+    while (p(node) != node && own(p(node)) == process) {
+        if (nb_ancesters < 100) {
+            ancesters[nb_ancesters] = node;
+            nb_ancesters++;
+        }
+
+        node = p(node);
     }
-    else {
-        const Node lroot = local_root(p(node), uf_parent, process, nb_process);
-        p(node) = lroot;
-        return lroot;
-    }
+
+    for (int i = 0 ; i < nb_ancesters - 1 ; i++)
+        p(ancesters[i]) = node;
+
+    return node;
 
     #undef p
     #undef own

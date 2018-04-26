@@ -12,13 +12,13 @@ TARGETS =\
 CXX = mpicc
 
 # Compiler flags
-CFLAGS = --std=c11 -finline-functions
+CFLAGS = --std=c11 -finline-limit=1000
 
 # Debuger flags
 DFLAGS =
 
 # Warning flags
-WFLAGS = -Wall -Wextra
+WFLAGS = -Wall -Wextra -Winline
 
 # Source files
 SRC_DIR = src
