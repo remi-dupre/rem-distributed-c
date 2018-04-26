@@ -2,6 +2,8 @@
 
 #define INIT_SIZE 10000
 
+extern inline void insert_edge(Graph*, Edge);
+
 
 Graph* new_empty_graph(Node nb_vertices)
 {
@@ -52,17 +54,6 @@ bool shrink(Graph* graph, size_t end_edge)
     graph->edges = new_container;
 
     return true;
-}
-
-void insert_edge(Graph* graph, Edge edge)
-{
-    assert(edge.x < graph->nb_vertices);
-    assert(edge.y < graph->nb_vertices);
-
-    // allocate more space
-    reserve(graph, graph->nb_edges + 1);
-    graph->edges[graph->nb_edges] = edge;
-    graph->nb_edges++;
 }
 
 void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges)

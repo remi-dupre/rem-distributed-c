@@ -63,11 +63,6 @@ void reserve(Graph* graph, size_t min_size);
 bool shrink(Graph* graph, size_t end_edge);
 
 /**
- * Insert a new edge to an existing graph.
- */
-void insert_edge(Graph* graph, Edge edge);
-
-/**
  * Insert a list of edges to an existing graph.
  */
 void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges);
@@ -78,5 +73,11 @@ void insert_edges(Graph* graph, const Edge* edges, size_t nb_edges);
  * Next lines represent edges.
  */
 Graph* read_as_ascii(FILE* file);
+
+/**
+ * Inline functions:
+ *   static inline void insert_edge(Graph* graph, Edge edge)
+ */
+#include "graph.inl"
 
 #endif

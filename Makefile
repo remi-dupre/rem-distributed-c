@@ -12,7 +12,7 @@ TARGETS =\
 CXX = mpicc
 
 # Compiler flags
-CFLAGS = --std=c11
+CFLAGS = --std=c11 -finline-functions
 
 # Debuger flags
 DFLAGS =

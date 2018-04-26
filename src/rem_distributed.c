@@ -1,5 +1,7 @@
 #include "rem_distributed.h"
 
+extern inline void insert_edge(Graph*, Edge);
+
 
 RemContext* new_context()
 {
