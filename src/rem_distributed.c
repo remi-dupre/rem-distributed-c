@@ -408,14 +408,10 @@ static inline Node local_root(Node node, Node* uf_parent, int process, int nb_pr
 void process_distributed(RemContext* context)
 {
     const RemContext context_cpy = *context;
-    const size_t nb_edges = context_cpy.border_graph->nb_edges;
-    const Edge* edges_cpy = context_cpy.border_graph->edges;
 
     // Enqueue all initial edges as tasks to process
     TaskHeap todo = empty_task_heap();
-
-    for (size_t i = 0 ; i < nb_edges ; i++)
-        push_task(&todo, edges_cpy[i]);
+    push_tasks(&todo, context->border_graph->edges, context->border_graph->nb_edges);
 
     // Create buffers of tasks to send to other process
     Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * sizeof(Edge));
@@ -519,8 +515,7 @@ void process_distributed(RemContext* context)
         );
 
         // Load tasks in the queue
-        for (int t = 0 ; t < total_size ; t++)
-            push_task(&todo, recv_datas[t]);
+        push_tasks(&todo, recv_datas, total_size);
 
         // Empty send buffers
         for (int p = 0 ; p < context_cpy.nb_process ; p++)

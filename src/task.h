@@ -1,3 +1,6 @@
+#ifndef TASK
+#define TASK
+
 #include <assert.h>
 #include <stdbool.h>
 
@@ -18,16 +21,15 @@ typedef struct TaskHeap
 TaskHeap empty_task_heap();
 
 /**
- * Check if the heap is empty.
+ * Push a list of tasks to the heap.
  */
-#define is_empty_heap(heap) ((heap).nb_tasks == 0)
+void push_tasks(TaskHeap* heap, Edge* tasks, int nb_tasks);
 
 /**
- * Add an element to the heap.
+ * Include inline functions:
+ *   bool is_empty_heap(TaskHeap heap)
+ *   Edge pop_task(TaskHeap* heap)
  */
-void push_task(TaskHeap* heap, Edge task);
+#include "task.inl"
 
-/**
- * Pop an element from the heap.
- */
-Edge pop_task(TaskHeap* heap);
+#endif

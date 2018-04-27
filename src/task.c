@@ -14,25 +14,19 @@ TaskHeap empty_task_heap()
     return heap;
 }
 
-void push_task(TaskHeap* heap, Edge task)
+void push_tasks(TaskHeap* heap, Edge* tasks, int nb_tasks)
 {
-    if (heap->container_size == heap->nb_tasks) {
-        Edge* new_container = malloc(heap->container_size * 2 * sizeof(Edge));
-        memcpy(new_container, heap->tasks, heap->container_size * sizeof(Edge));
+    if (heap->container_size < heap->nb_tasks + nb_tasks) {
+        while (heap->container_size < heap->nb_tasks + nb_tasks)
+            heap->container_size *= 2;
+
+        Edge* new_container = malloc(heap->container_size * sizeof(Edge));
+        memcpy(new_container, heap->tasks, heap->nb_tasks * sizeof(Edge));
 
         free(heap->tasks);
         heap->tasks = new_container;
-        heap->container_size *= 2;
     }
 
-    heap->tasks[heap->nb_tasks] = task;
-    heap->nb_tasks++;
-}
-
-Edge pop_task(TaskHeap* heap)
-{
-    assert(!is_empty_heap(*heap));
-
-    heap->nb_tasks--;
-    return heap->tasks[heap->nb_tasks];
+    memcpy(heap->tasks + heap->nb_tasks, tasks, nb_tasks * sizeof(Edge));
+    heap->nb_tasks += nb_tasks;
 }
