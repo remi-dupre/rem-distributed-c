@@ -256,7 +256,9 @@ void flush_buffered_graph(RemContext* context)
     #define own(x) ((int) (x) % nb_process)
 
     for (size_t i = 0 ; i < nb_edges ; i++) {
-        if (own(edges[i].x) == process && own(edges[i].y) == process) {
+        assert(own(edges[i].x) == process);
+
+        if (own(edges[i].y) == process) {
             // We own this edge, insert it via rem's algorithm
             rem_insert(edges[i], uf_parent);
         }
