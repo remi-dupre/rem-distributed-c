@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "graph.h"
+#include "rem.h"
 #include "task.h"
 #include "tools.h"
 

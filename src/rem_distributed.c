@@ -256,42 +256,13 @@ void flush_buffered_graph(RemContext* context)
     #define own(x) ((int) (x) % nb_process)
 
     for (size_t i = 0 ; i < nb_edges ; i++) {
-        Edge edge = edges[i];
-
-        if (own(edge.x) == process && own(edge.y) == process) {
+        if (own(edges[i].x) == process && own(edges[i].y) == process) {
             // We own this edge, insert it via rem's algorithm
-            #define p(x) uf_parent[x]
-
-            while (p(edge.x) != p(edge.y)) {
-                if (p(edge.x) < p(edge.y)) {
-                    if (p(edge.y) == edge.y) {
-                        p(edge.y) = p(edge.x);
-                        continue;
-                    }
-                    else {
-                        Node save_p_y = p(edge.y);
-                        p(edge.y) = p(edge.x);
-                        edge.y = save_p_y;
-                    }
-                }
-                else {
-                    if (p(edge.x) == edge.x) {
-                        p(edge.x) = p(edge.y);
-                        continue;
-                    }
-                    else {
-                        Node save_p_x = p(edge.x);
-                        p(edge.x) = p(edge.y);
-                        edge.x = save_p_x;
-                    }
-                }
-            }
-
-            #undef p
+            rem_insert(edges[i], uf_parent);
         }
         else {
             // This edge is in the border, we just need to keep it for later
-            insert_edge(context->border_graph, edge);
+            insert_edge(context->border_graph, edges[i]);
         }
     }
 

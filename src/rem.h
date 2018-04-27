@@ -8,6 +8,12 @@
 
 
 /**
+ * Include inline functions
+ *   void rem_insert(Edge edge, Node* uf_parent)
+ */
+#include "rem.inl"
+
+/**
  * Updates a disjoint set structure with a set of new Edges.
  */
 void rem_update(const Edge* edges, size_t nb_edges, Node* uf_parent);
