@@ -48,4 +48,19 @@ int main(int argc, char** argv)
             printf("%u %u\n", x, y);
         }
     }
+
+    if (strcmp(argv[1], "density") == 0) {
+        if (argc < 4) {
+            perror("Nomber of vertices and density are excepted.");
+            return 1;
+        }
+
+        const Node nb_vertices = atoi(argv[2]);
+        const float density = atof(argv[3]);
+
+        for (Node x = 0 ; x < nb_vertices ; x++)
+            for (Node y = 0 ; y < nb_vertices ; y++)
+                if (rand() < density * RAND_MAX)
+                    printf("%u %u\n", x, y);
+    }
 }
