@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
 
     flush_buffered_graph(context);
     filter_border(context);
+    flatten(context);
 
     t_end_local = time_ms();
 

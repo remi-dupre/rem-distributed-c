@@ -82,6 +82,11 @@ void flush_buffered_graph(RemContext* context);
 void filter_border(RemContext* context);
 
 /**
+ * Efficiently compress the structure to a maximum height of 1.
+ */
+void flatten(RemContext* context);
+
+/**
  * Start the distributed processing of data.
  */
 void process_distributed(RemContext* context);

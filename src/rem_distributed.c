@@ -351,6 +351,27 @@ void filter_border(RemContext* context)
     context->border_graph = new_border;
 }
 
+void flatten(RemContext* context)
+{
+    int process = context->process;
+    int nb_process = context->nb_process;
+
+    Node nb_vertices = context->nb_vertices;
+    Node* uf_parent = context->uf_parent;
+
+    #define p(x) uf_parent[x]
+    #define owning(x) ((int) ((x) % nb_process) == process)
+
+    for (Node i = 0 ; i < nb_vertices ; i++) {
+        if (owning(p(i)) && owning(p(p(i)))) {
+            p(i) = p(p(i));
+        }
+    }
+
+    #undef owning
+    #undef p
+}
+
 static inline Node local_root(Node node, Node* uf_parent, int process, int nb_process)
 {
     #define own(x) ((int) (x) % nb_process)
@@ -409,11 +430,11 @@ void process_distributed(RemContext* context)
     }
 
     // Processing loop that stops when every process has no more data to send
-    int iteration = 0;
+    // int iteration = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
         bool did_nothing = is_empty_heap(todo);
-        iteration++;
+        // iteration++;
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
@@ -455,13 +476,13 @@ void process_distributed(RemContext* context)
         // Share buffer sizes with other process
         int* recv_sizes = malloc(context->nb_process * sizeof(int));
         int* recv_displ = malloc(context->nb_process * sizeof(int));
-        long time_waiting = time_ms();
+        // long time_waiting = time_ms();
         MPI_Alltoall(
             did_nothing ? fake_sizes : to_send_sizes, 1, MPI_INT,
             recv_sizes, 1, MPI_INT,
             context_cpy.communicator
         );
-        time_waiting = time_ms() - time_waiting;
+        // time_waiting = time_ms() - time_waiting;
 
         int end_count = 0; // number of process who had nothing to do
         int total_size = 0;
