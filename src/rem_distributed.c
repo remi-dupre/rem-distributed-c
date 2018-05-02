@@ -17,6 +17,10 @@ RemContext* new_context()
     context->border_graph = new_empty_graph(0);
     context->buffer_graph = new_empty_graph(0);
 
+    context->nb_steps = 0;
+    context->time_step_proc = malloc(100000 * sizeof(time_t));
+    context->time_step_comm = malloc(100000 * sizeof(time_t));
+
     return context;
 }
 
@@ -246,6 +250,8 @@ void recv_graph(RemContext* context)
 
 void flush_buffered_graph(RemContext* context)
 {
+    context->time_flushing = time_ms();
+
     int process = context->process;
     int nb_process = context->nb_process;
 
@@ -272,10 +278,14 @@ void flush_buffered_graph(RemContext* context)
     context->buffer_graph = new_empty_graph(context->nb_vertices);
 
     #undef own
+
+    context->time_flushing = time_ms() - context->time_flushing;
 }
 
 void filter_border(RemContext* context)
 {
+    context->time_filtering = time_ms();
+
     size_t nb_edges = context->border_graph->nb_edges;
     Edge* edges = context->border_graph->edges;
 
@@ -322,6 +332,8 @@ void filter_border(RemContext* context)
 
     delete_graph(context->border_graph);
     context->border_graph = new_border;
+
+    context->time_filtering = time_ms() - context->time_filtering;
 }
 
 void flatten(RemContext* context)
@@ -399,17 +411,16 @@ void process_distributed(RemContext* context)
     }
 
     // Processing loop that stops when every process has no more data to send
-    // int iteration = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
         bool did_nothing = is_empty_heap(todo);
-        // iteration++;
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
         #define own(x) ((int) (x) % context_cpy.nb_process)
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
+        context->time_step_proc[context->nb_steps] = time_ms();
         for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty_heap(todo) ; t++) {
             Edge r = pop_task(&todo);
             assert(own(r.x) == context_cpy.process);
@@ -437,11 +448,13 @@ void process_distributed(RemContext* context)
             }
 
         }
+        context->time_step_proc[context->nb_steps] = time_ms() - context->time_step_proc[context->nb_steps];
 
         #undef lroot
         #undef own
         #undef p
 
+        context->time_step_comm[context->nb_steps] = time_ms();
         // Share buffer sizes with other process
         int* recv_sizes = malloc(context->nb_process * sizeof(int));
         int* recv_displ = malloc(context->nb_process * sizeof(int));
@@ -466,11 +479,6 @@ void process_distributed(RemContext* context)
                 total_size += recv_sizes[p];
             }
         }
-
-        // FILE* file;
-        // while ((file = fopen("mpitest.time.log", "a")) == NULL);
-        // fprintf(file, "%d;%d;%ld;%d\n", context->process, iteration, time_waiting, total_size);
-        // fclose(file);
 
         // If no one sends data, the algorithm is done
         if (end_count == context_cpy.nb_process) {
@@ -498,6 +506,9 @@ void process_distributed(RemContext* context)
         free(recv_sizes);
         free(recv_displ);
         free(recv_datas);
+
+        context->time_step_comm[context->nb_steps] = time_ms() - context->time_step_comm[context->nb_steps];
+        context->nb_steps++;
     }
 
     // Free allocated memory
@@ -592,4 +603,21 @@ void debug_context(const RemContext* context)
 
     // for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
     //     printf("# (%u, %u)\n", context->border_graph->edges[i].x, context->border_graph->edges[i].y);
+}
+
+void debug_timers(const RemContext* context)
+{
+    FILE* file;
+
+    while ((file = fopen("mpitest.time.log", "a")) == NULL);
+    fprintf(file, "%d;%lu;%lu\n", context->process, context->time_flushing, context->time_filtering);
+    fclose(file);
+
+    while ((file = fopen("mpitest.steps.log", "a")) == NULL);
+    for (int iteration = 0 ; iteration < context->nb_steps ; iteration++) {
+        fprintf(file, "%d;%d;", context->process, iteration);
+        fprintf(file, "%lu;%lu\n", context->time_step_proc[iteration], context->time_step_comm[iteration]);
+    }
+
+    fclose(file);
 }

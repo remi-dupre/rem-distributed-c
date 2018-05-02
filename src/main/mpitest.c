@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
     t_end_process = time_ms();
 
     debug_structure(context);
+    debug_timers(context);
 
     // Close input file
     if (argc > 1)

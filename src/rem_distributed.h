@@ -49,6 +49,12 @@ typedef struct RemContext
 
     Graph* buffer_graph;  // graph holding edges during communication phase
     Graph* border_graph;  // graph containing border edges, if not flushed
+
+    time_t time_flushing;
+    time_t time_filtering;
+    int nb_steps;
+    time_t* time_step_proc;
+    time_t* time_step_comm;
 } RemContext;
 
 /**
@@ -101,5 +107,10 @@ void debug_structure(const RemContext* context);
  * Display some general informations about the context.
  */
 void debug_context(const RemContext* context);
+
+/**
+* Append timers to the file mpitest.time.csv.
+*/
+void debug_timers(const RemContext* context);
 
 #endif
