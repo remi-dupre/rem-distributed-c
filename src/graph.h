@@ -52,11 +52,6 @@ Graph* new_empty_graph(Node nb_vertices);
 void delete_graph(Graph* graph);
 
 /**
- * Indicate that a graph will need at least some space.
- */
-void reserve(Graph* graph, size_t min_size);
-
-/**
  * Shrink the structure to keep edges from 0 to end_edge-1.
  * Returns false if no space was released.
  */
@@ -76,6 +71,7 @@ Graph* read_as_ascii(FILE* file);
 
 /**
  * Inline functions:
+ *   static inlune void reserve(Graph* graph, size_t min_size)
  *   static inline void insert_edge(Graph* graph, Edge edge)
  */
 #include "graph.inl"
