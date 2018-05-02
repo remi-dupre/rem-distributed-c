@@ -252,6 +252,8 @@ void flush_buffered_graph(RemContext* context)
 {
     context->time_flushing = time_ms();
 
+    Graph* tmp = new_empty_graph(context->nb_vertices);
+
     int process = context->process;
     int nb_process = context->nb_process;
 
@@ -266,7 +268,7 @@ void flush_buffered_graph(RemContext* context)
 
         if (own(edges[i].y) == process) {
             // We own this edge, insert it via rem's algorithm
-            rem_insert(edges[i], uf_parent);
+            insert_edge(tmp, edges[i]);
         }
         else {
             // This edge is in the border, we just need to keep it for later
@@ -274,12 +276,21 @@ void flush_buffered_graph(RemContext* context)
         }
     }
 
-    free(context->buffer_graph);
+    context->time_flushing = time_ms() - context->time_flushing;
+    context->time_inserting = time_ms();
+
+    for (size_t i = 0 ; i < tmp->nb_edges ; i++) {
+        rem_insert(tmp->edges[i], uf_parent);
+    }
+
+    context->time_inserting = time_ms() - context->time_inserting;
+
+    delete_graph(tmp);
+    delete_graph(context->buffer_graph);
     context->buffer_graph = new_empty_graph(context->nb_vertices);
 
     #undef own
 
-    context->time_flushing = time_ms() - context->time_flushing;
 }
 
 void filter_border(RemContext* context)

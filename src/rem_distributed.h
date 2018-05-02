@@ -51,6 +51,7 @@ typedef struct RemContext
     Graph* border_graph;  // graph containing border edges, if not flushed
 
     time_t time_flushing;
+    time_t time_inserting;
     time_t time_filtering;
     int nb_steps;
     time_t* time_step_proc;
