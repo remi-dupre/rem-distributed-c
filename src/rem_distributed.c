@@ -330,6 +330,9 @@ void filter_border(RemContext* context)
     }
     #undef p
 
+    context->prefilter_size = context->border_graph->nb_edges;
+    context->postfilter_size = new_border->nb_edges;
+
     delete_graph(context->border_graph);
     context->border_graph = new_border;
 
@@ -610,7 +613,7 @@ void debug_timers(const RemContext* context)
     FILE* file;
 
     while ((file = fopen("mpitest.time.log", "a")) == NULL);
-    fprintf(file, "%d;%lu;%lu\n", context->process, context->time_flushing, context->time_filtering);
+    fprintf(file, "%d;%lu;%lu;%d;%d\n", context->process, context->time_flushing, context->time_filtering, context->prefilter_size, context->postfilter_size);
     fclose(file);
 
     while ((file = fopen("mpitest.steps.log", "a")) == NULL);

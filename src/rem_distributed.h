@@ -55,6 +55,8 @@ typedef struct RemContext
     int nb_steps;
     time_t* time_step_proc;
     time_t* time_step_comm;
+    int prefilter_size;
+    int postfilter_size;
 } RemContext;
 
 /**
