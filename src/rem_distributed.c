@@ -257,7 +257,6 @@ void flush_buffered_graph(RemContext* context)
     int process = context->process;
     int nb_process = context->nb_process;
 
-    Node* uf_parent = context->uf_parent;
     size_t nb_edges = context->buffer_graph->nb_edges;
     Edge* edges = context->buffer_graph->edges;
 
@@ -279,9 +278,7 @@ void flush_buffered_graph(RemContext* context)
     context->time_flushing = time_ms() - context->time_flushing;
     context->time_inserting = time_ms();
 
-    for (size_t i = 0 ; i < tmp->nb_edges ; i++) {
-        rem_insert(tmp->edges[i], uf_parent);
-    }
+    rem_update(tmp->edges, tmp->nb_edges, context->uf_parent);
 
     context->time_inserting = time_ms() - context->time_inserting;
 
@@ -307,39 +304,10 @@ void filter_border(RemContext* context)
     // Create a new graph in which we will push edges to keep
     Graph* new_border = new_empty_graph(context->nb_vertices);
 
-    #define p(x) uf_copy[x]
     for (size_t i = 0 ; i < nb_edges ; i++) {
-        Node r_x = edges[i].x;
-        Node r_y = edges[i].y;
-
-        while (p(r_x) != p(r_y)) {
-            if (p(r_x) < p(r_y)) {
-                if (r_y == p(r_y)) {
-                    p(r_y) = p(r_x);
-                    insert_edge(new_border, edges[i]);
-                    continue;
-                }
-                else {
-                    Node save_p_y = p(r_y);
-                    p(r_y) = p(r_x);
-                    r_y = save_p_y;
-                }
-            }
-            else {
-                if (r_x == p(r_x)) {
-                    p(r_x) = p(r_y);
-                    insert_edge(new_border, edges[i]);
-                    continue;
-                }
-                else {
-                    Node save_p_x = p(r_x);
-                    p(r_x) = p(r_y);
-                    r_x = save_p_x;
-                }
-            }
-        }
+        if (!rem_insert(edges[i], uf_copy))
+            insert_edge(new_border, edges[i]);
     }
-    #undef p
 
     context->prefilter_size = context->border_graph->nb_edges;
     context->postfilter_size = new_border->nb_edges;
@@ -408,9 +376,13 @@ void process_distributed(RemContext* context)
 {
     const RemContext context_cpy = *context;
 
+    Node* uf_copy = malloc(context_cpy.nb_vertices * sizeof(Node));
+    memcpy(uf_copy, context_cpy.uf_parent, context_cpy.nb_vertices * sizeof(Node));
+
     // Enqueue all initial edges as tasks to process
     TaskHeap todo = empty_task_heap();
-    push_tasks(&todo, context->border_graph->edges, context->border_graph->nb_edges);
+    TaskHeap border = empty_task_heap();
+    push_tasks(&border, context_cpy.border_graph->edges, context_cpy.border_graph->nb_edges);
 
     // Create buffers of tasks to send to other process
     Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * sizeof(Edge));
@@ -425,9 +397,11 @@ void process_distributed(RemContext* context)
     }
 
     // Processing loop that stops when every process has no more data to send
+    context->prefilter_size = context->border_graph->nb_edges;
+    context->postfilter_size = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
-        bool did_nothing = is_empty_heap(todo);
+        bool did_nothing = is_empty_heap(todo) && is_empty_heap(border);
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
@@ -435,8 +409,24 @@ void process_distributed(RemContext* context)
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
         context->time_step_proc[context->nb_steps] = time_ms();
-        for (int t = 0 ; t < MAX_LOCAL_ITER && !is_empty_heap(todo) ; t++) {
-            Edge r = pop_task(&todo);
+        int t = 0;
+        while (t < MAX_LOCAL_ITER && (!is_empty_heap(border) || !is_empty_heap(todo))) {
+            Edge r;
+
+            if (is_empty_heap(todo)) {
+                r = pop_task(&border);
+
+                if (rem_insert(r, uf_copy))
+                    continue;
+
+                context->postfilter_size++;
+            }
+            else {
+                r = pop_task(&todo);
+                rem_insert(r, uf_copy);
+            }
+
+            t++;
             assert(own(r.x) == context_cpy.process);
 
             r.x = lroot(r.x);
