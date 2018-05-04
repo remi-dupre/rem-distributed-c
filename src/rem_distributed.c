@@ -17,9 +17,11 @@ RemContext* new_context()
     context->border_graph = new_empty_graph(0);
     context->buffer_graph = new_empty_graph(0);
 
-    context->nb_steps = 0;
-    context->time_step_proc = malloc(100000 * sizeof(time_t));
-    context->time_step_comm = malloc(100000 * sizeof(time_t));
+    #ifdef TIMERS
+        context->nb_steps = 0;
+        context->time_step_proc = malloc(100000 * sizeof(time_t));
+        context->time_step_comm = malloc(100000 * sizeof(time_t));
+    #endif
 
     return context;
 }
@@ -250,7 +252,9 @@ void recv_graph(RemContext* context)
 
 void flush_buffered_graph(RemContext* context)
 {
-    context->time_flushing = time_ms();
+    #ifdef TIMERS
+        context->time_flushing = time_ms();
+    #endif
 
     Graph* tmp = new_empty_graph(context->nb_vertices);
     Graph* border_graph = context->border_graph;
@@ -276,12 +280,16 @@ void flush_buffered_graph(RemContext* context)
         }
     }
 
-    context->time_flushing = time_ms() - context->time_flushing;
-    context->time_inserting = time_ms();
+    #ifdef TIMERS
+        context->time_flushing = time_ms() - context->time_flushing;
+        context->time_inserting = time_ms();
+    #endif
 
     rem_update(tmp->edges, tmp->nb_edges, context->uf_parent);
 
-    context->time_inserting = time_ms() - context->time_inserting;
+    #ifdef TIMERS
+        context->time_inserting = time_ms() - context->time_inserting;
+    #endif
 
     delete_graph(tmp);
     delete_graph(context->buffer_graph);
@@ -293,7 +301,9 @@ void flush_buffered_graph(RemContext* context)
 
 void filter_border(RemContext* context)
 {
-    context->time_filtering = time_ms();
+    #ifdef TIMERS
+        context->time_filtering = time_ms();
+    #endif
 
     size_t nb_edges = context->border_graph->nb_edges;
     Edge* edges = context->border_graph->edges;
@@ -309,13 +319,17 @@ void filter_border(RemContext* context)
         if (!rem_insert(edges[i], uf_copy))
             insert_edge(new_border, edges[i]);
 
-    context->prefilter_size = context->border_graph->nb_edges;
-    context->postfilter_size = new_border->nb_edges;
+    #ifdef TIMERS
+        context->prefilter_size = context->border_graph->nb_edges;
+        context->postfilter_size = new_border->nb_edges;
+    #endif
 
     delete_graph(context->border_graph);
     context->border_graph = new_border;
 
-    context->time_filtering = time_ms() - context->time_filtering;
+    #ifdef TIMERS
+        context->time_filtering = time_ms() - context->time_filtering;
+    #endif
 }
 
 void flatten(RemContext* context)
@@ -398,7 +412,10 @@ void process_distributed(RemContext* context)
         #define own(x) ((int) (x) % context_cpy.nb_process)
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
-        context->time_step_proc[context->nb_steps] = time_ms();
+        #ifdef TIMERS
+            context->time_step_proc[context->nb_steps] = time_ms();
+        #endif
+
         int t = 0;
         while (t < MAX_LOCAL_ITER && !is_empty_heap(todo)) {
             Edge r = pop_task(&todo);
@@ -428,23 +445,27 @@ void process_distributed(RemContext* context)
             }
 
         }
-        context->time_step_proc[context->nb_steps] = time_ms() - context->time_step_proc[context->nb_steps];
+
+        #ifdef TIMERS
+            context->time_step_proc[context->nb_steps] = time_ms() - context->time_step_proc[context->nb_steps];
+        #endif
 
         #undef lroot
         #undef own
         #undef p
 
-        context->time_step_comm[context->nb_steps] = time_ms();
+        #ifdef TIMERS
+            context->time_step_comm[context->nb_steps] = time_ms();
+        #endif
+
         // Share buffer sizes with other process
         int* recv_sizes = malloc(context->nb_process * sizeof(int));
         int* recv_displ = malloc(context->nb_process * sizeof(int));
-        // long time_waiting = time_ms();
         MPI_Alltoall(
             did_nothing ? fake_sizes : to_send_sizes, 1, MPI_INT,
             recv_sizes, 1, MPI_INT,
             context_cpy.communicator
         );
-        // time_waiting = time_ms() - time_waiting;
 
         int end_count = 0; // number of process who had nothing to do
         int total_size = 0;
@@ -487,8 +508,10 @@ void process_distributed(RemContext* context)
         free(recv_displ);
         free(recv_datas);
 
-        context->time_step_comm[context->nb_steps] = time_ms() - context->time_step_comm[context->nb_steps];
-        context->nb_steps++;
+        #ifdef TIMERS
+            context->time_step_comm[context->nb_steps] = time_ms() - context->time_step_comm[context->nb_steps];
+            context->nb_steps++;
+        #endif
     }
 
     // Free allocated memory
@@ -587,6 +610,10 @@ void debug_context(const RemContext* context)
 
 void debug_timers(const RemContext* context)
 {
+    context = context; // Just avoid "unused variable" warning
+
+    #ifdef TIMERS
+
     FILE* file;
 
     while ((file = fopen("mpitest.time.log", "a")) == NULL);
@@ -600,4 +627,6 @@ void debug_timers(const RemContext* context)
     }
 
     fclose(file);
+
+    #endif
 }

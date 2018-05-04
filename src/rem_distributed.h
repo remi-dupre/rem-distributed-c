@@ -13,6 +13,10 @@
 #include "tools.h"
 
 
+#ifndef NDEBUG
+    #define TIMERS
+#endif
+
 // Size of chunks to load from files
 #define FILE_BUFF_SIZE 8192
 
@@ -50,14 +54,16 @@ typedef struct RemContext
     Graph* buffer_graph;  // graph holding edges during communication phase
     Graph* border_graph;  // graph containing border edges, if not flushed
 
-    time_t time_flushing;
-    time_t time_inserting;
-    time_t time_filtering;
-    int nb_steps;
-    time_t* time_step_proc;
-    time_t* time_step_comm;
-    int prefilter_size;
-    int postfilter_size;
+    #ifdef TIMERS
+        time_t time_flushing;
+        time_t time_inserting;
+        time_t time_filtering;
+        int nb_steps;
+        time_t* time_step_proc;
+        time_t* time_step_comm;
+        int prefilter_size;
+        int postfilter_size;
+    #endif
 } RemContext;
 
 /**
