@@ -304,10 +304,9 @@ void filter_border(RemContext* context)
     // Create a new graph in which we will push edges to keep
     Graph* new_border = new_empty_graph(context->nb_vertices);
 
-    for (size_t i = 0 ; i < nb_edges ; i++) {
+    for (size_t i = 0 ; i < nb_edges ; i++)
         if (!rem_insert(edges[i], uf_copy))
             insert_edge(new_border, edges[i]);
-    }
 
     context->prefilter_size = context->border_graph->nb_edges;
     context->postfilter_size = new_border->nb_edges;
@@ -376,13 +375,9 @@ void process_distributed(RemContext* context)
 {
     const RemContext context_cpy = *context;
 
-    Node* uf_copy = malloc(context_cpy.nb_vertices * sizeof(Node));
-    memcpy(uf_copy, context_cpy.uf_parent, context_cpy.nb_vertices * sizeof(Node));
-
     // Enqueue all initial edges as tasks to process
     TaskHeap todo = empty_task_heap();
-    TaskHeap border = empty_task_heap();
-    push_tasks(&border, context_cpy.border_graph->edges, context_cpy.border_graph->nb_edges);
+    push_tasks(&todo, context_cpy.border_graph->edges, context_cpy.border_graph->nb_edges);
 
     // Create buffers of tasks to send to other process
     Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * sizeof(Edge));
@@ -397,11 +392,9 @@ void process_distributed(RemContext* context)
     }
 
     // Processing loop that stops when every process has no more data to send
-    context->prefilter_size = context->border_graph->nb_edges;
-    context->postfilter_size = 0;
     while (true) {
         // If this process has nothing to do, send a fake size to everyone
-        bool did_nothing = is_empty_heap(todo) && is_empty_heap(border);
+        bool did_nothing = is_empty_heap(todo);
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x)])
@@ -410,25 +403,11 @@ void process_distributed(RemContext* context)
 
         context->time_step_proc[context->nb_steps] = time_ms();
         int t = 0;
-        while (t < MAX_LOCAL_ITER && (!is_empty_heap(border) || !is_empty_heap(todo))) {
-            Edge r;
-
-            if (is_empty_heap(todo)) {
-                r = pop_task(&border);
-
-                if (rem_insert(r, uf_copy))
-                    continue;
-
-                context->postfilter_size++;
-            }
-            else {
-                r = pop_task(&todo);
-                rem_insert(r, uf_copy);
-            }
-
-            t++;
+        while (t < MAX_LOCAL_ITER && !is_empty_heap(todo)) {
+            Edge r = pop_task(&todo);
             assert(own(r.x) == context_cpy.process);
 
+            t++;
             r.x = lroot(r.x);
 
             if (p(r.x) < r.y) {
