@@ -10,12 +10,7 @@ static inline void reserve(Graph* graph, size_t min_size)
             graph->container_size = 2 * graph->container_size + 1;
 
         // create new container
-        Edge* new_container = malloc(graph->container_size * sizeof(Edge));
-        memcpy(new_container, graph->edges, graph->nb_edges * sizeof(Edge));
-
-        // swap containers
-        free(graph->edges);
-        graph->edges = new_container;
+        graph->edges = realloc(graph->edges, graph->container_size * sizeof(Edge));
     }
 }
 

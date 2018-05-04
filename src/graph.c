@@ -10,14 +10,16 @@ Graph* new_empty_graph(Node nb_vertices)
     Graph* graph = malloc(sizeof(Graph));
     graph->nb_vertices = nb_vertices;
     graph->nb_edges = 0;
-    graph->container_size = INIT_SIZE;
-    graph->edges = malloc(INIT_SIZE * sizeof(Edge));
+    graph->container_size = 0;
+    graph->edges = NULL;
     return graph;
 }
 
 void delete_graph(Graph* graph)
 {
-    free(graph->edges);
+    if (graph->edges)
+        free(graph->edges);
+
     free(graph);
 }
 
@@ -31,12 +33,8 @@ bool shrink(Graph* graph, size_t end_edge)
     if (end_edge < graph->nb_edges)
         graph->nb_edges = end_edge;
 
-    Edge* new_container = malloc(end_edge * sizeof(Edge));
-    memcpy(new_container, graph->edges, end_edge * sizeof(Edge));
-
-    free(graph->edges);
-    graph->edges = new_container;
-
+    graph->edges = realloc(graph->edges, end_edge * sizeof(Edge));
+    graph->container_size = end_edge;
     return true;
 }
 

@@ -253,6 +253,7 @@ void flush_buffered_graph(RemContext* context)
     context->time_flushing = time_ms();
 
     Graph* tmp = new_empty_graph(context->nb_vertices);
+    Graph* border_graph = context->border_graph;
 
     int process = context->process;
     int nb_process = context->nb_process;
@@ -271,7 +272,7 @@ void flush_buffered_graph(RemContext* context)
         }
         else {
             // This edge is in the border, we just need to keep it for later
-            insert_edge(context->border_graph, edges[i]);
+            insert_edge(border_graph, edges[i]);
         }
     }
 
