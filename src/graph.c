@@ -1,9 +1,5 @@
 #include "graph.h"
 
-#define INIT_SIZE 10000
-
-extern inline void insert_edge(Graph*, Edge);
-
 
 Graph* new_empty_graph(Node nb_vertices)
 {

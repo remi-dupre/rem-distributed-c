@@ -350,12 +350,8 @@ static inline Node local_root(Node node, Node* uf_parent, int process, int nb_pr
 
     while (p(node) != node && own(p(node)) == process) {
         if (nb_ancesters == anc_container_size) {
-            Node* new_container = malloc((2 * anc_container_size + 100) * sizeof(Node));
-            memcpy(new_container, ancesters, anc_container_size);
-            anc_container_size = 2 * anc_container_size + 100;
-
-            if (ancesters) free(ancesters);
-            ancesters = new_container;
+            anc_container_size = 2 * anc_container_size + 1;
+            ancesters = realloc(ancesters, anc_container_size * sizeof(Node));
         }
         ancesters[nb_ancesters] = node;
         nb_ancesters++;
