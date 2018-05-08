@@ -1,4 +1,9 @@
+#include <stdbool.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+
 
 #include "../rem.h"
 #include "../tools.h"
@@ -37,13 +42,28 @@ int main(int argc, char** argv) {
     } while (loaded > 0);
 
     // Execute raw REM
-    time_t time = time_ms();
+    time_t timer = time_ms();
     rem_update(graph->edges, graph->nb_edges, uf_parent);
-    time = time_ms() - time;
+    timer = time_ms() - timer;
+
+    // Output to log filss
+    struct stat stat_buff;
+    bool csv_head = stat("rem.csv", &stat_buff);
+
+    char time_str[1024];
+    time_t t = time(NULL);
+    strftime(time_str, 1024, "%c", localtime(&t));
 
     FILE* logs = fopen("mpitest.log", "a");
-    fprintf(logs, ">> Basic algorithm\n");
-    fprintf(logs, "%ld ms\n\n", time);
+    fprintf(logs, ">> Basic algorithm: %s (%s)\n", argv[1], time_str);
+    fprintf(logs, "%ld ms\n\n", timer);
+    fclose(logs);
+
+    FILE* csv = fopen("rem.csv", "a");
+    if (csv_head) {
+        fprintf(csv, "date;input;time\n");
+    }
+    fprintf(csv, "%s;%s;%ld\n", time_str, argv[1], timer);
 
     printf("%u\n", nb_vertices);
     for (Node i = 0 ; i < nb_vertices ; i++) {

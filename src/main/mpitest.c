@@ -99,10 +99,7 @@ int main(int argc, char** argv) {
 
         // Write csv file
         fprintf(csv, "%s;", time_str);
-
-        for (int i = 0 ; i < argc ; i++)
-            fprintf(csv, " %s", argv[i]);
-
+        fprintf(csv, argv[argc-1]);
         fprintf(csv, ";%d;%d", nb_process, MAX_LOCAL_ITER);
         fprintf(csv, ";%ld;%ld;%ld\n", time_sending, time_localp, time_process);
 

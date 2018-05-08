@@ -9,6 +9,7 @@ import os
 
 # File to load
 FILE_NAME = 'mpitest.csv'
+FILE_CLAS = 'rem.csv'  # file containing classical algortihm's timers
 
 # Directory where to save figure
 SAVE_DIR = 'graph'
@@ -21,21 +22,16 @@ COL_DST = 6
 
 
 # Prepare output directory
-try:
-    os.mkdir(SAVE_DIR)
-except OSError:
-    pass
+def mkdir(dir):
+    try:
+        os.mkdir(dir)
+    except OSError:
+        pass
 
-try:
-    os.mkdir(SAVE_DIR + '/png')
-except OSError:
-    pass
-
-try:
-    os.mkdir(SAVE_DIR + '/pgf')
-except OSError:
-    pass
-
+mkdir(SAVE_DIR)
+mkdir(SAVE_DIR + '/png')
+mkdir(SAVE_DIR + '/pgf')
+mkdir(SAVE_DIR + '/pdf')
 
 
 datas = {}
@@ -43,42 +39,58 @@ datas = {}
 # Load datas
 with open(FILE_NAME) as file:
     reader = csv.reader(file, delimiter=';')
+    next(reader)  # title row
 
-    next(reader)  # title column
     for row in reader:
-        cmd = row[COL_CMD]
+        input = row[COL_CMD]
         np  = row[COL_NP]
         loc = int(row[COL_LOC])
         dst = int(row[COL_DST])
 
-        if cmd not in datas:
-            datas[cmd] = {
+        if input not in datas:
+            datas[input] = {
                 'np': [],
                 'loc': [],
                 'dst': [],
-                'sum': []
+                'sum': [],
+                'cst': None
             }
 
-        datas[cmd]['np'].append(np)
-        datas[cmd]['loc'].append(loc)
-        datas[cmd]['dst'].append(dst)
-        datas[cmd]['sum'].append(loc + dst)
+        datas[input]['np'].append(np)
+        datas[input]['loc'].append(loc)
+        datas[input]['dst'].append(dst)
+        datas[input]['sum'].append(loc + dst)
+
+# Load constant timers
+with open(FILE_CLAS) as file:
+    reader = csv.reader(file, delimiter=';')
+    next(reader)  # title row
+
+    for row in reader:
+        input = row[1]
+        time = int(row[2])
+
+        if input in datas:
+            datas[input]['cst'] = time
+
 
 # Draw graphs
-for cmd in datas:
-    name = cmd.split(' ')[-1].split('/')[-1].split('.')[0]
+for input in datas:
+    name = input.split('/')[-1].split('.')[0]
 
-    figure = plt.figure(cmd)
+    figure = plt.figure(input)
     plt.title('REM : ' + name.title())
     plt.xlabel('Number of processes')
     plt.ylabel('Time spent (ms)')
 
-    plt.plot(datas[cmd]['np'], datas[cmd]['loc'], '--', label='local steps')
-    plt.plot(datas[cmd]['np'], datas[cmd]['dst'], '--', label='distributed steps')
-    plt.plot(datas[cmd]['np'], datas[cmd]['sum'], '.-', label='total')
+    plt.plot(datas[input]['np'], datas[input]['loc'], '--', label='local steps')
+    plt.plot(datas[input]['np'], datas[input]['dst'], '--', label='distributed steps')
+    plt.plot(datas[input]['np'], datas[input]['sum'], '.-', label='total')
+    plt.plot(datas[input]['np'], [datas[input]['cst']] * len(datas[input]['np']), 'k-', label='classical algorithm')
 
     plt.legend()
 
     # Save the graph
     plt.savefig('%s/png/%s.png' % (SAVE_DIR, name))
     plt.savefig('%s/pgf/%s.pgf' % (SAVE_DIR, name))
+    plt.savefig('%s/pdf/%s.pdf' % (SAVE_DIR, name))
