@@ -29,15 +29,19 @@ BUILD_DIR = build
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # Main targets
-.PHONY: all release debug clean clean-all
+.PHONY: all release debug timers clean clean-all
 
 all: debug
 
 debug: DFLAGS += -ggdb
+debug: CFLAGS += -DTIMERS
 debug: $(TARGETS)
 
 release: CFLAGS += -O3 -DNDEBUG
 release: $(TARGETS)
+
+timers: CFLAGS += -DTIMERS
+timers: release
 
 clean:
 	rm -r $(BUILD_DIR)

@@ -67,6 +67,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    printf("The two graphs have the same components.");
+    printf("The two graphs have the same components.\n");
     return 0;
 }

@@ -13,10 +13,6 @@
 #include "tools.h"
 
 
-#ifndef NDEBUG
-    #define TIMERS
-#endif
-
 // Size of chunks to load from files
 #define FILE_BUFF_SIZE 8192
 
