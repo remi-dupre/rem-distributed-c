@@ -55,15 +55,31 @@ int main(int argc, char** argv) {
     t_end_process = time_ms();
 
     debug_structure(context);
-    debug_timers(context);
 
     // Close input file
     if (argc > 1)
         fclose(input);
 
+    // Initialise log files
+    #ifdef TIMERS
+        if (process == 0) {
+            FILE* file = fopen("mpitest.time.csv", "a");
+            fprintf(file, "process;time flushing;time inserting;time filtering;prefilter size;postfilter size\n");
+            fclose(file);
+
+            file = fopen("mpitest.steps.csv", "a");
+            fprintf(file, "process;iteration;processing time;communication time\n");
+            fclose(file);
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+    #endif
+
     MPI_Finalize();
 
     // Debug timings
+    debug_timers(context);
+
     if (process == 0) {
         struct stat buffer;
         bool csv_head = stat("mpitest.csv", &buffer);

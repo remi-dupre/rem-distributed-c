@@ -620,11 +620,16 @@ void debug_timers(const RemContext* context)
 
     FILE* file;
 
-    while ((file = fopen("mpitest.time.log", "a")) == NULL);
-    fprintf(file, "%d;%lu;%lu;%d;%d\n", context->process, context->time_flushing, context->time_filtering, context->prefilter_size, context->postfilter_size);
+    while ((file = fopen("mpitest.time.csv", "a")) == NULL);
+    fprintf(
+        file, "%d;%lu;%lu;%lu;%d;%d\n", context->process,
+        context->time_flushing, context->time_inserting,
+        context->time_filtering,
+        context->prefilter_size, context->postfilter_size
+    );
     fclose(file);
 
-    while ((file = fopen("mpitest.steps.log", "a")) == NULL);
+    while ((file = fopen("mpitest.steps.csv", "a")) == NULL);
     for (int iteration = 0 ; iteration < context->nb_steps ; iteration++) {
         fprintf(file, "%d;%d;", context->process, iteration);
         fprintf(file, "%lu;%lu\n", context->time_step_proc[iteration], context->time_step_comm[iteration]);
