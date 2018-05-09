@@ -1,0 +1,40 @@
+\documentclass[12px]{article}
+
+% Algorithmic packages
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\title{Distributed REM Algorithm}
+\author{Fredrik Manne, Rémi Dupré}
+
+
+\begin{document}
+  \maketitle
+
+  \section{Algorithm}
+  Assumptions:
+  \begin{itemize}
+    \item $\forall x, p(x) \leq x$.
+    \item Each process can determine the owner of any node.
+  \end{itemize}
+
+  \begin{algorithm}
+    \caption{Handle one request $(r_x, r_y)$ on $owner(r_x)$}
+    \begin{algorithmic}
+      \State $r_x \gets local\_root(r_x)$
+      \State
+      \If {$p(r_x) < r_y$}
+        \State request $owner(r_y)$ with parameter $(r_y, p(r_x))$
+      \ElsIf {$p(r_x) > r_y$}
+        \If {$p(r_x) = r_x$}
+          \State $p(r_x) \gets r_y$
+        \Else
+          \State $z \gets p(r_x)$
+          \State $p(r_x) \gets r_y$
+          \State request $owner(z)$ with parameter $(z, r_y)$
+        \EndIf
+      \EndIf
+    \end{algorithmic}
+  \end{algorithm}
+
+\end{document}
