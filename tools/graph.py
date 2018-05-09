@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Tool to generate a graph from outputed csv file.
 Default file to be read is `mpitest.csv`.

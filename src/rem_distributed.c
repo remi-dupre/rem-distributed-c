@@ -254,9 +254,9 @@ void flush_buffered_graph(RemContext* context)
 {
     #ifdef TIMERS
         context->time_flushing = time_ms();
+        Graph* tmp = new_empty_graph(context->nb_vertices);
     #endif
 
-    Graph* tmp = new_empty_graph(context->nb_vertices);
     Graph* border_graph = context->border_graph;
 
     int process = context->process;
@@ -264,6 +264,7 @@ void flush_buffered_graph(RemContext* context)
 
     size_t nb_edges = context->buffer_graph->nb_edges;
     Edge* edges = context->buffer_graph->edges;
+    Node* uf_parent = context->uf_parent;
 
     #define own(x) ((int) (x) % nb_process)
 
@@ -271,8 +272,13 @@ void flush_buffered_graph(RemContext* context)
         assert(own(edges[i].x) == process);
 
         if (own(edges[i].y) == process) {
-            // We own this edge, insert it via rem's algorithm
-            insert_edge(tmp, edges[i]);
+            #ifndef TIMERS
+                // We own this edge, insert it via rem's algorithm
+                rem_insert(edges[i], uf_parent);
+            #else
+                // If we keep track of timings, do the rem insertion later
+                insert_edge(tmp, edges[i]);
+            #endif
         }
         else {
             // This edge is in the border, we just need to keep it for later
@@ -282,16 +288,14 @@ void flush_buffered_graph(RemContext* context)
 
     #ifdef TIMERS
         context->time_flushing = time_ms() - context->time_flushing;
+
         context->time_inserting = time_ms();
-    #endif
-
-    rem_update(tmp->edges, tmp->nb_edges, context->uf_parent);
-
-    #ifdef TIMERS
+        rem_update(tmp->edges, tmp->nb_edges, uf_parent);
         context->time_inserting = time_ms() - context->time_inserting;
+
+        delete_graph(tmp);
     #endif
 
-    delete_graph(tmp);
     delete_graph(context->buffer_graph);
     context->buffer_graph = new_empty_graph(context->nb_vertices);
 
