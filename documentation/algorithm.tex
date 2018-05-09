@@ -1,11 +1,16 @@
 \documentclass[12px]{article}
 
 % Algorithmic packages
+\usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
+\usepackage[a4paper]{geometry}
 
 \title{Distributed REM Algorithm}
 \author{Fredrik Manne, Rémi Dupré}
+
+\newtheorem{lemma}{Lemma}
 
 
 \begin{document}
@@ -35,6 +40,41 @@
         \EndIf
       \EndIf
     \end{algorithmic}
+    \label{algo:handle_task}
   \end{algorithm}
+
+
+  \section{Correctness}
+
+  \subsection{Notations}
+    In order to make the proof clearer, some of the structures will be simplified.
+
+    \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm only the process owning $x$ knows the value of $p(x)$.
+
+    \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle.
+
+    \paragraph{union\_graph} is the graph of all edges that the algorithm still kept memory of. $union\_graph = dset \cup tasks$.
+
+    \paragraph{equivalence} a relation $\sim$ is defined as $G_1$ $\sim$ $G_2$ $\Leftrightarrow$ $G_1$ and $G_2$ have the same components. \\
+
+    A step of the algorithm consists in poping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying algorithm \ref{algo:handle_task}, the states in $dset$ and $tasks$ is modified.
+    Thus we can denotate the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$.
+
+  \subsection{Proof}
+    \begin{lemma}
+      At any step $t$ of algorithm \ref{algo:handle_task}, $union\_graph_t \sim union\_graph_{t+1}$.
+    \end{lemma}
+    \begin{proof}
+      At any t, the algorithm pops the edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph$ and that no other component is merged.
+      \begin{itemize}
+        \item If $p_t(r_x) = r_y$, then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
+        \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks$. Thus on any path, the edge $(r_x, r_y) \in tasks_t$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$.
+        \item If $p_t(r_x) > r_y$:
+          \begin{itemize}
+            \item If $p(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
+            \item If $p(r_x) \neq r_x$, $(p_{t+1}(r_x) = r_y)$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Also, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
+          \end{itemize}
+      \end{itemize}
+    \end{proof}
 
 \end{document}
