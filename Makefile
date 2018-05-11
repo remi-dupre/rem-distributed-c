@@ -6,16 +6,20 @@ TARGETS =\
 	graph-to-bin\
 	mtx-to-bin\
 	mpitest\
+	shared\
 	rem
 
 # C compiler
 CXX = mpicc
 
 # Compiler flags
-CFLAGS = --std=c11
+CFLAGS = --std=c11 -fopenmp
 
 # Debuger flags
 DFLAGS =
+
+# Library linkage
+LFLAGS = -fopenmp
 
 # Warning flags
 WFLAGS = -Wall -Wextra -Winline

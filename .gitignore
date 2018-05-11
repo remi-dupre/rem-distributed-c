@@ -18,6 +18,7 @@ graph-to-bin
 mpitest
 mtx-to-bin
 rem
+shared
 
 # Debuging files
 callgrind.*

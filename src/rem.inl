@@ -28,3 +28,30 @@ static inline bool rem_insert(Edge edge, Node* uf_parent)
     return true;
     #undef p
 }
+
+static inline bool rem_compare(Edge edge, const Node* uf_parent)
+{
+    #define p(x) uf_parent[x]
+
+    while (p(edge.x) != p(edge.y)) {
+        if (p(edge.x) < p(edge.y)) {
+            if (p(edge.y) == edge.y) {
+                return false;
+            }
+            else {
+                edge.y = p(edge.y);
+            }
+        }
+        else {
+            if (p(edge.x) == edge.x) {
+                return false;
+            }
+            else {
+                edge.x = p(edge.x);
+            }
+        }
+    }
+
+    return true;
+    #undef p
+}

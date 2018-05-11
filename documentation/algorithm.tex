@@ -65,16 +65,22 @@
       At any step $t$ of algorithm \ref{algo:handle_task}, $union\_graph_t \sim union\_graph_{t+1}$.
     \end{lemma}
     \begin{proof}
-      At any t, the algorithm pops the edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph$ and that no other component is merged.
+      At any t, the algorithm pops the edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph_{t+1}$ and that no other component is merged.
       \begin{itemize}
         \item If $p_t(r_x) = r_y$, then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
         \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks$. Thus on any path, the edge $(r_x, r_y) \in tasks_t$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$.
         \item If $p_t(r_x) > r_y$:
-          \begin{itemize}
-            \item If $p(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
-            \item If $p(r_x) \neq r_x$, $(p_{t+1}(r_x) = r_y)$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Also, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
-          \end{itemize}
+        \begin{itemize}
+          \item If $p(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
+          \item If $p(r_x) \neq r_x$, $(p_{t+1}(r_x) = r_y)$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Also, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
+        \end{itemize}
       \end{itemize}
     \end{proof}
 
+    \begin{lemma}
+      Algorithm \ref{algo:handle_task} halts.
+    \end{lemma}
+    \begin{proof}
+      When a task $(r_x, r_y)$ is popped from $tasks$, either no new task is pushed to it, either a new task is pushed, that is greater than the one popped in the meaning of lexicographic order.
+    \end{proof}
 \end{document}

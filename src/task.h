@@ -21,14 +21,11 @@ typedef struct TaskHeap
 TaskHeap empty_task_heap();
 
 /**
- * Push a list of tasks to the heap.
- */
-void push_tasks(TaskHeap* heap, Edge* tasks, int nb_tasks);
-
-/**
  * Include inline functions:
  *   bool is_empty_heap(TaskHeap heap)
  *   Edge pop_task(TaskHeap* heap)
+ *   void push_tasks(TaskHeap* heap, Edge* tasks, int nb_tasks)
+ *   void push_task(TaskHeap* heap, Edge tasks)
  */
 #include "task.inl"
 
