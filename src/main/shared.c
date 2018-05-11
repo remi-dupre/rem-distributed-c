@@ -33,82 +33,21 @@ int main(int argc, char** argv) {
         uf_parent[i] = i;
 
     // Catch graph from file
-    Graph graph = *new_empty_graph(nb_vertices);
+    Graph* graph = new_empty_graph(nb_vertices);
 
     // Read file by chunks
     int loaded = 0;
     Edge* buffer = malloc(BUFF_SIZE * sizeof(Edge));
 
     do {
-        insert_edges(&graph, buffer, loaded);
+        insert_edges(graph, buffer, loaded);
         loaded = fread(buffer, sizeof(Edge), BUFF_SIZE, input);
     } while (loaded > 0);
 
-
-    time_t timer;
-
-    #pragma omp parallel
-    {
-        TaskHeap tasks = empty_task_heap();
-
-        #pragma omp for
-        for (size_t i = 0 ; i < graph.nb_edges ; i++) {
-            push_task(&tasks, graph.edges[i]);
-        }
-
-        #pragma omp barrier
-        timer = time_ms();
-
-        while (tasks.nb_tasks > 0) {
-            TaskHeap new_tasks = empty_task_heap();
-
-            for (size_t i = 0 ; i < tasks.nb_tasks ; i++) {
-                Edge edge = tasks.tasks[i];
-
-                #define p(x) (uf_parent[x])
-                while (p(edge.x) != p(edge.y)) {
-                    if (p(edge.x) > p(edge.y)) {
-                        if(edge.x == p(edge.x)) {
-                            p(edge.x) = p(edge.y);
-                            push_task(&new_tasks, edge);
-                        }
-                        else {
-                            const Node z = p(edge.x);
-                            p(edge.x) = p(edge.y);
-                            edge.x = z;
-                        }
-                    }
-                    else {
-                        if (edge.y == p(edge.y)) {
-                            p(edge.y) = p(edge.x);
-                            push_task(&new_tasks, edge);
-                        }
-                        else {
-                            const Node z = p(edge.y);
-                            p(edge.y) = p(edge.x);
-                            edge.y = z;
-                        }
-                    }
-                }
-                #undef p
-            }
-
-            free(tasks.tasks);
-            tasks = new_tasks;
-
-            new_tasks = empty_task_heap();
-            for (size_t i = 0 ; i < tasks.nb_tasks ; i++) {
-                if (!rem_compare(tasks.tasks[i], uf_parent))
-                    push_task(&new_tasks, tasks.tasks[i]);
-            }
-
-            free(tasks.tasks);
-            tasks = new_tasks;
-        }
-    }
-
+    // Execute raw REM
+    time_t timer = time_ms();
+    rem_shared_update(graph->edges, graph->nb_edges, uf_parent, 8);
     timer = time_ms() - timer;
-
 
     // Output to log filss
     struct stat stat_buff;
