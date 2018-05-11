@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     } while (loaded > 0);
 
 
-    time_t timer = time_ms();
+    time_t timer;
 
     #pragma omp parallel
     {
@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
         for (size_t i = 0 ; i < graph.nb_edges ; i++) {
             push_task(&tasks, graph.edges[i]);
         }
+
+        #pragma omp barrier
+        timer = time_ms();
 
         while (tasks.nb_tasks > 0) {
             TaskHeap new_tasks = empty_task_heap();
