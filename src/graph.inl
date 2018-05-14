@@ -23,12 +23,7 @@ static inline void insert_edge(Graph* graph, Edge edge)
     assert(edge.y < graph->nb_vertices);
 
     // allocate more space
-    size_t nb_edges;
-    #pragma omp critical
-    {
-        nb_edges = graph->nb_edges;
-        reserve(graph, nb_edges + 1);
-        graph->nb_edges++;
-    }
-    graph->edges[nb_edges] = edge;
+    reserve(graph, graph->nb_edges + 1);
+    graph->edges[graph->nb_edges] = edge;
+    graph->nb_edges++;
 }

@@ -297,29 +297,46 @@ void flush_buffered_graph(RemContext* context)
                 rem_insert(edges[i], uf_parent);
             #endif
         }
-        // else {
-        //     #ifdef TIMERS
-        //         // This edge is in the border, we just need to keep it for later
-        //         #pragma omp critical
-        //         insert_edge(border_graph, edges[i]);
-        //     #else
-        //         // Insert the edge only if it provides information
-        //         if (!rem_insert(edges[i], border_components)) {
-        //             #pragma omp critical
-        //             insert_edge(border_graph, edges[i]);
-        //         }
-        //     #endif
-        // }
     }
 
     // Catch border edges
-    #pragma omp parallel for num_threads(NB_THREADS)
-    for (size_t i = 0 ; i < nb_edges ; i++) {
-        assert(own(edges[i].x) == process);
+    border_graph->nb_edges = 0;
+    #pragma omp parallel num_threads(NB_THREADS)
+    {
+        // Store localy edges catched by this process
+        Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
-        if (own(edges[i].y) != process && !rem_insert(edges[i], border_components)) {
-            insert_edge(border_graph, edges[i]);
+        #pragma omp for
+        for (size_t i = 0 ; i < nb_edges ; i++) {
+            assert(own(edges[i].x) == process);
+
+            if (!rem_insert(edges[i], border_components))
+                if (own(edges[i].y) != process)
+                    insert_edge(local_border_graph, edges[i]);
         }
+
+        // position where this thread will insert in real graph
+        size_t pos_insertion;
+
+        #pragma omp critical
+        {
+            pos_insertion = border_graph->nb_edges;
+            border_graph->nb_edges += local_border_graph->nb_edges;
+        }
+
+        #pragma omp barrier
+        #pragma omp single
+        reserve(border_graph, border_graph->nb_edges);
+
+        assert(pos_insertion + local_border_graph->nb_edges <= border_graph->nb_edges);
+
+        memcpy(
+            border_graph->edges + pos_insertion,
+            local_border_graph->edges,
+            local_border_graph->nb_edges * sizeof(Edge)
+        );
+
+        delete_graph(local_border_graph);
     }
 
     // Process timers and free memory
