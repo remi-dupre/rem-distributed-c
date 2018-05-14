@@ -49,8 +49,6 @@ with open(FILE_NAME) as file:
         loc = int(row[COL_LOC])
         dst = int(row[COL_DST])
 
-        print(int(row[COL_DST]))
-
         if input not in datas:
             datas[input] = {
                 'np': [],
@@ -100,9 +98,8 @@ for input in datas:
     plt.xlabel('Number of processes')
     plt.ylabel('Time spent (ms)')
 
-    plt.plot(datas[input]['np'], datas[input]['loc'], '--', label='local steps')
-    print(datas[input]['dst'],)
-    plt.plot(datas[input]['np'], datas[input]['dst'], '--', label='distributed steps')
+    plt.plot(datas[input]['np'], datas[input]['loc'], ':', label='local steps')
+    plt.plot(datas[input]['np'], datas[input]['dst'], ':', label='distributed steps')
     plt.plot(datas[input]['np'], datas[input]['sum'], '.-', label='total')
     plt.plot(datas[input]['np'], [datas[input]['cst']] * len(datas[input]['np']), 'k-', label='classical algorithm')
     plt.plot(datas[input]['np'], [datas[input]['shr']] * len(datas[input]['np']), 'r-', label='shared memory\'s algorithm (24 threads)')

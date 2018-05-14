@@ -276,26 +276,33 @@ void flush_buffered_graph(RemContext* context)
 
     #define own(x) ((int) (x) % nb_process)
 
+    #define NB_THREADS 4
+    #ifdef NB_THREADS
+        #pragma omp parallel for num_threads(NB_THREADS)
+    #endif
     for (size_t i = 0 ; i < nb_edges ; i++) {
         assert(own(edges[i].x) == process);
 
         if (own(edges[i].y) == process) {
-            #ifndef TIMERS
-                // We own this edge, insert it via rem's algorithm
-                if (!rem_insert(edges[i], uf_parent))
-                    rem_insert(edges[i], border_components);
-            #else
+            #ifdef TIMERS
                 // If we keep track of timings, do the rem insertion later
+                #pragma omp critical
                 insert_edge(tmp, edges[i]);
+            #else
+                // We own this edge, insert it via rem's algorithm
+                #pragma omp critical
+                rem_insert(edges[i], uf_parent);
             #endif
         }
         else {
             #ifdef TIMERS
                 // This edge is in the border, we just need to keep it for later
+                #pragma omp critical
                 insert_edge(border_graph, edges[i]);
             #else
                 // Insert the edge only if it provides information
                 if (!rem_insert(edges[i], border_components)) {
+                    #pragma omp critical
                     insert_edge(border_graph, edges[i]);
                 }
             #endif
