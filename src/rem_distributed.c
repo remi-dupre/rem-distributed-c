@@ -315,8 +315,9 @@ void flush_buffered_graph(RemContext* context)
     // Catch border edges
     #pragma omp parallel for num_threads(NB_THREADS)
     for (size_t i = 0 ; i < nb_edges ; i++) {
-        if (!rem_insert(edges[i], border_components)) {
-            #pragma omp critical
+        assert(own(edges[i].x) == process);
+
+        if (own(edges[i].y) != process && !rem_insert(edges[i], border_components)) {
             insert_edge(border_graph, edges[i]);
         }
     }
