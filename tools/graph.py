@@ -10,7 +10,8 @@ import os
 
 # File to load
 FILE_NAME = 'mpitest.csv'
-FILE_CLAS = 'rem.csv'  # file containing classical algortihm's timers
+FILE_CLAS = 'rem.csv'     # file containing classical algortihm's timers
+FILE_SHAR = 'shared.csv'  # file containing shared memory's algorithm's timers
 
 # Directory where to save figure
 SAVE_DIR = 'graph'
@@ -48,13 +49,16 @@ with open(FILE_NAME) as file:
         loc = int(row[COL_LOC])
         dst = int(row[COL_DST])
 
+        print(int(row[COL_DST]))
+
         if input not in datas:
             datas[input] = {
                 'np': [],
                 'loc': [],
                 'dst': [],
                 'sum': [],
-                'cst': None
+                'cst': None,
+                'shr': None
             }
 
         datas[input]['np'].append(np)
@@ -62,7 +66,7 @@ with open(FILE_NAME) as file:
         datas[input]['dst'].append(dst)
         datas[input]['sum'].append(loc + dst)
 
-# Load constant timers
+# Load classical's timers
 with open(FILE_CLAS) as file:
     reader = csv.reader(file, delimiter=';')
     next(reader)  # title row
@@ -73,6 +77,18 @@ with open(FILE_CLAS) as file:
 
         if input in datas:
             datas[input]['cst'] = time
+
+# Load shared memory's timers
+with open(FILE_SHAR) as file:
+    reader = csv.reader(file, delimiter=';')
+    next(reader)  # title row
+
+    for row in reader:
+        input = row[1]
+        time = int(row[2])
+
+        if input in datas:
+            datas[input]['shr'] = time
 
 
 # Draw graphs
@@ -85,9 +101,11 @@ for input in datas:
     plt.ylabel('Time spent (ms)')
 
     plt.plot(datas[input]['np'], datas[input]['loc'], '--', label='local steps')
+    print(datas[input]['dst'],)
     plt.plot(datas[input]['np'], datas[input]['dst'], '--', label='distributed steps')
     plt.plot(datas[input]['np'], datas[input]['sum'], '.-', label='total')
     plt.plot(datas[input]['np'], [datas[input]['cst']] * len(datas[input]['np']), 'k-', label='classical algorithm')
+    plt.plot(datas[input]['np'], [datas[input]['shr']] * len(datas[input]['np']), 'r-', label='shared memory\'s algorithm (24 threads)')
 
     plt.legend()
 

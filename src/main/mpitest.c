@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     t_end_send = time_ms();
 
     flush_buffered_graph(context);
-    filter_border(context);
+    // filter_border(context);  // now handled inside flush
     // flatten(context);
 
     t_end_local = time_ms();

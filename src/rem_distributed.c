@@ -149,7 +149,7 @@ void send_graph(FILE* file, RemContext* context)
                 );
 
                 // Eliminate fake edge
-                if (recv_buff[my_size-1].x == context->nb_vertices) {
+                if (my_size > 0 && recv_buff[my_size-1].x == context->nb_vertices) {
                     assert(recv_buff[my_size-1].y == context->nb_vertices);
                     my_size--;
                 }
@@ -257,6 +257,14 @@ void flush_buffered_graph(RemContext* context)
         Graph* tmp = new_empty_graph(context->nb_vertices);
     #endif
 
+    #ifndef TIMERS
+        // We will filter on the fly
+        Node* border_components = malloc(context->nb_vertices * sizeof(Node));
+
+        for (Node i = 0 ; i < context->nb_vertices ; i++)
+            border_components[i] = i;
+    #endif
+
     Graph* border_graph = context->border_graph;
 
     int process = context->process;
@@ -274,15 +282,23 @@ void flush_buffered_graph(RemContext* context)
         if (own(edges[i].y) == process) {
             #ifndef TIMERS
                 // We own this edge, insert it via rem's algorithm
-                rem_insert(edges[i], uf_parent);
+                if (!rem_insert(edges[i], uf_parent))
+                    rem_insert(edges[i], border_components);
             #else
                 // If we keep track of timings, do the rem insertion later
                 insert_edge(tmp, edges[i]);
             #endif
         }
         else {
-            // This edge is in the border, we just need to keep it for later
-            insert_edge(border_graph, edges[i]);
+            #ifdef TIMERS
+                // This edge is in the border, we just need to keep it for later
+                insert_edge(border_graph, edges[i]);
+            #else
+                // Insert the edge only if it provides information
+                if (!rem_insert(edges[i], border_components)) {
+                    insert_edge(border_graph, edges[i]);
+                }
+            #endif
         }
     }
 
@@ -294,6 +310,9 @@ void flush_buffered_graph(RemContext* context)
         context->time_inserting = time_ms() - context->time_inserting;
 
         delete_graph(tmp);
+        filter_border(context);
+    #else
+        free(border_components);
     #endif
 
     delete_graph(context->buffer_graph);
