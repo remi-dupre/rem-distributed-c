@@ -252,16 +252,6 @@ void recv_graph(RemContext* context)
 
 void flush_buffered_graph(RemContext* context)
 {
-    #ifdef TIMERS
-        context->time_flushing = time_ms();
-        Graph* tmp = new_empty_graph(context->nb_vertices);
-    #endif
-
-    #ifndef TIMERS
-        // We will filter on the fly
-
-    #endif
-
     Graph* border_graph = context->border_graph;
 
     Node* border_components = malloc(context->nb_vertices * sizeof(Node));
@@ -275,50 +265,41 @@ void flush_buffered_graph(RemContext* context)
     Edge* edges = context->buffer_graph->edges;
     Node* uf_parent = context->uf_parent;
 
+    // Prepare border_graph to catch filtered edges
+    border_graph->nb_edges = 0;
+
     #define own(x) ((int) (x) % nb_process)
 
     #define NB_THREADS 4
     #ifndef NB_THREADS
         #define NB_THREADS 1
     #endif
-    #pragma omp parallel for num_threads(NB_THREADS)
-    for (size_t i = 0 ; i < nb_edges ; i++) {
-        assert(own(edges[i].x) == process);
 
-        // Catch internal edges
-        if (own(edges[i].y) == process) {
-            #ifdef TIMERS
-                // If we keep track of timings, do the rem insertion later
-                #pragma omp critical
-                insert_edge(tmp, edges[i]);
-            #else
-                // We own this edge, insert it via rem's algorithm
-                #pragma omp critical
-                rem_insert(edges[i], uf_parent);
-            #endif
-        }
-    }
-
-    // Catch border edges
-    border_graph->nb_edges = 0;
     #pragma omp parallel num_threads(NB_THREADS)
     {
-        // Store localy edges catched by this process
+        // Store localy border edges catched by this process
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
         #pragma omp for
         for (size_t i = 0 ; i < nb_edges ; i++) {
             assert(own(edges[i].x) == process);
 
-            if (!rem_insert(edges[i], border_components))
-                if (own(edges[i].y) != process)
+            if (own(edges[i].y) == process) {
+                // We own this edge, insert it via rem's algorithm
+                #pragma omp critical (ufparent_insert)
+                rem_insert(edges[i], uf_parent);
+            }
+            else {
+                if (!rem_insert(edges[i], border_components)) {
                     insert_edge(local_border_graph, edges[i]);
+                }
+            }
         }
 
         // position where this thread will insert in real graph
         size_t pos_insertion;
 
-        #pragma omp critical
+        #pragma omp critical (prepare_insertion)
         {
             pos_insertion = border_graph->nb_edges;
             border_graph->nb_edges += local_border_graph->nb_edges;
@@ -338,18 +319,6 @@ void flush_buffered_graph(RemContext* context)
 
         delete_graph(local_border_graph);
     }
-
-    // Process timers and free memory
-    #ifdef TIMERS
-        context->time_flushing = time_ms() - context->time_flushing;
-
-        context->time_inserting = time_ms();
-        rem_update(tmp->edges, tmp->nb_edges, uf_parent);
-        context->time_inserting = time_ms() - context->time_inserting;
-
-        delete_graph(tmp);
-        // filter_border(context);
-    #endif
 
     delete_graph(context->buffer_graph);
     context->buffer_graph = new_empty_graph(context->nb_vertices);

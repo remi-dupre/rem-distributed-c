@@ -46,12 +46,12 @@ int main(int argc, char** argv) {
 
     // Execute raw REM
     time_t timer = time_ms();
-    rem_shared_update(graph->edges, graph->nb_edges, uf_parent, 8);
+    rem_shared_update(graph->edges, graph->nb_edges, uf_parent, 24);
     timer = time_ms() - timer;
 
     // Output to log filss
     struct stat stat_buff;
-    bool csv_head = stat("rem.csv", &stat_buff);
+    bool csv_head = stat("shared.csv", &stat_buff);
 
     char time_str[1024];
     time_t t = time(NULL);
