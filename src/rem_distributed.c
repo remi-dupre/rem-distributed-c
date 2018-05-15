@@ -288,7 +288,8 @@ void flush_buffered_graph(RemContext* context)
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
-                insert_edge(local_internal_graph, edges[i]);
+                if (!rem_insert_inplace(&edges[i], uf_parent))
+                    insert_edge(local_internal_graph, edges[i]);
             }
             else {
                 if (!rem_insert(edges[i], border_components)) {
