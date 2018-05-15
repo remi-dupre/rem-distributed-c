@@ -253,6 +253,7 @@ void recv_graph(RemContext* context)
 void flush_buffered_graph(RemContext* context)
 {
     Graph* border_graph = context->border_graph;
+    Graph* internal_graph = new_empty_graph(context->nb_vertices);
 
     Node* border_components = malloc(context->nb_vertices * sizeof(Node));
     for (Node i = 0 ; i < context->nb_vertices ; i++)
@@ -278,6 +279,7 @@ void flush_buffered_graph(RemContext* context)
     #pragma omp parallel num_threads(NB_THREADS)
     {
         // Store localy border edges catched by this process
+        Graph* local_internal_graph = new_empty_graph(context->nb_vertices);
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
         #pragma omp for
@@ -286,8 +288,7 @@ void flush_buffered_graph(RemContext* context)
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
-                #pragma omp critical (ufparent_insert)
-                rem_insert(edges[i], uf_parent);
+                insert_edge(local_internal_graph, edges[i]);
             }
             else {
                 if (!rem_insert(edges[i], border_components)) {
@@ -296,31 +297,50 @@ void flush_buffered_graph(RemContext* context)
             }
         }
 
-        // position where this thread will insert in real graph
-        size_t pos_insertion;
+        // position where this thread will insert in full graphs
+        size_t border_pos_insertion, internal_pos_insertion;
 
         #pragma omp critical (prepare_insertion)
         {
-            pos_insertion = border_graph->nb_edges;
+            border_pos_insertion = border_graph->nb_edges;
             border_graph->nb_edges += local_border_graph->nb_edges;
+
+            internal_pos_insertion = internal_graph->nb_edges;
+            internal_graph->nb_edges += local_internal_graph->nb_edges;
         }
 
         #pragma omp barrier
-        #pragma omp single
+
+        #pragma omp single nowait
         reserve(border_graph, border_graph->nb_edges);
 
-        assert(pos_insertion + local_border_graph->nb_edges <= border_graph->nb_edges);
+        #pragma omp single
+        reserve(internal_graph, internal_graph->nb_edges);
+
+        assert(border_pos_insertion + local_border_graph->nb_edges <= border_graph->nb_edges);
+        assert(internal_pos_insertion + local_internal_graph->nb_edges <= internal_graph->nb_edges);
 
         memcpy(
-            border_graph->edges + pos_insertion,
+            border_graph->edges + border_pos_insertion,
             local_border_graph->edges,
             local_border_graph->nb_edges * sizeof(Edge)
         );
 
+        memcpy(
+            internal_graph->edges + internal_pos_insertion,
+            local_internal_graph->edges,
+            local_internal_graph->nb_edges * sizeof(Edge)
+        );
+
         delete_graph(local_border_graph);
+        delete_graph(local_internal_graph);
     }
 
+    rem_shared_update(internal_graph->edges, internal_graph->nb_edges, uf_parent, NB_THREADS);
+
+    delete_graph(internal_graph);
     delete_graph(context->buffer_graph);
+
     context->buffer_graph = new_empty_graph(context->nb_vertices);
     free(border_components);
 
