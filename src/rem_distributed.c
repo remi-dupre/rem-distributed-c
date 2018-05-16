@@ -252,6 +252,14 @@ void recv_graph(RemContext* context)
 
 void flush_buffered_graph(RemContext* context)
 {
+    #ifdef TIMERS
+        context->time_flushing = time_ms();
+
+        context->prefilter_size = 0;
+        context->postfilter_size = 0;
+    #endif
+
+
     Graph* border_graph = context->border_graph;
     Graph* internal_graph = new_empty_graph(context->nb_vertices);
 
@@ -282,21 +290,54 @@ void flush_buffered_graph(RemContext* context)
         Graph* local_internal_graph = new_empty_graph(context->nb_vertices);
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
+        #ifdef TIMERS
+            context->time_inserting = time_ms();
+        #endif
+
         #pragma omp for
         for (size_t i = 0 ; i < nb_edges ; i++) {
             assert(own(edges[i].x) == process);
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
-                if (!rem_insert_inplace(&edges[i], uf_parent))
+                if (!rem_insert_inplace(&edges[i], uf_parent)) {
                     insert_edge(local_internal_graph, edges[i]);
+                }
             }
+        #ifdef TIMERS
+            }
+
+            #pragma omp barrier
+            #pragma omp single
+            {
+                context->time_inserting = time_ms() - context->time_inserting;
+                context->time_filtering = time_ms();
+            }
+
+            #pragma omp for
+            for (size_t i = 0 ; i < nb_edges ; i++) {
+                if (own(edges[i].y) == process);
+        #endif
             else {
                 if (!rem_insert(edges[i], border_components)) {
+                    #ifdef TIMERS
+                        #pragma omp atomic
+                        context->postfilter_size++;
+                    #endif
+
                     insert_edge(local_border_graph, edges[i]);
                 }
             }
         }
+
+        #ifdef TIMERS
+            #pragma omp barrier
+            #pragma omp single
+            {
+                context->time_filtering = time_ms() - context->time_filtering;
+                context->prefilter_size = nb_edges;
+            }
+        #endif
 
         // position where this thread will insert in full graphs
         size_t border_pos_insertion, internal_pos_insertion;
@@ -336,6 +377,10 @@ void flush_buffered_graph(RemContext* context)
         delete_graph(local_border_graph);
         delete_graph(local_internal_graph);
     }
+
+    #ifdef TIMERS
+        context->time_flushing = time_ms() - context->time_flushing;
+    #endif
 
     rem_shared_update(internal_graph->edges, internal_graph->nb_edges, uf_parent, NB_THREADS);
 
