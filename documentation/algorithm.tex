@@ -1,6 +1,9 @@
 \documentclass[12px]{article}
 
+\usepackage[hidelinks]{hyperref}
+
 % Algorithmic packages
+\usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{algorithm}
@@ -10,7 +13,9 @@
 \title{Distributed REM Algorithm}
 \author{Fredrik Manne, Rémi Dupré}
 
-\newtheorem{lemma}{Lemma}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
 
 
 \begin{document}
@@ -25,7 +30,7 @@
 
   \begin{algorithm}
     \caption{Handle one request $(r_x, r_y)$ on $owner(r_x)$}
-    \begin{algorithmic}
+    \begin{algorithmic}[1]
       \State $r_x \gets local\_root(r_x)$
       \State
       \If {$p(r_x) < r_y$}
@@ -47,40 +52,73 @@
   \section{Correctness}
 
   \subsection{Notations}
-    In order to make the proof clearer, some of the structures will be simplified.
+    In order to make the proof clearer, some of the structures will be simplified. The state of the algorithm can be sumed up with following structures:
 
     \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm only the process owning $x$ knows the value of $p(x)$.
 
-    \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle.
+    \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle. These pairs can be an edge of the original graph, or a task sent by another process. As the proof will not need to order how the tasks are handled, it is enough to only consider the union all tasks received by all process.
 
     \paragraph{union\_graph} is the graph of all edges that the algorithm still kept memory of. $union\_graph = dset \cup tasks$.
 
     \paragraph{equivalence} a relation $\sim$ is defined as $G_1$ $\sim$ $G_2$ $\Leftrightarrow$ $G_1$ and $G_2$ have the same components. \\
 
-    A step of the algorithm consists in poping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying algorithm \ref{algo:handle_task}, the states in $dset$ and $tasks$ is modified.
-    Thus we can denotate the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$.
+    A step of the algorithm consists in poping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying algorithm \ref{algo:handle_task} the states in $dset$ and $tasks$ is modified.
+    Given a run, we will denotate the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$ (cf. algorithm \ref{algo:construct_dset_tasks}).
+
+    \begin{algorithm}
+      \caption{Construction of $dset_{t+1}$ and $tasks_{t+1}$}
+      \begin{algorithmic}[1]
+        \State $dset_{t+1} = dset_t$
+        \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ where $(r_x, r_y) \in tasks_t$
+        \State Apply algorithm \ref{algo:handle_task} on $owner(r_x)$.
+      \end{algorithmic}
+      \label{algo:construct_dset_tasks}
+    \end{algorithm}
+
+    The algorithm is initialised with state $dset_0 = \{(i, i)~/~i \in V\}$ and $tasks = G$.
 
   \subsection{Proof}
     \begin{lemma}
+      \label{lemma:transitivity}
       At any step $t$ of algorithm \ref{algo:handle_task}, $union\_graph_t \sim union\_graph_{t+1}$.
     \end{lemma}
+
     \begin{proof}
       At any t, the algorithm pops the edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph_{t+1}$ and that no other component is merged.
       \begin{itemize}
-        \item If $p_t(r_x) = r_y$, then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
-        \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks$. Thus on any path, the edge $(r_x, r_y) \in tasks_t$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$.
+        \item If $p_t(r_x) = r_y$, algorithm \ref{algo:handle_task} doesn't change $dset_{t+1}$ and $tasks_{t+1}$. \\
+          Then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
+
+        \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks_{t+1}$. \\
+          Thus on any path containing $(r_x, r_y) \in tasks_t$, the edge $(r_x, r_y)$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$. No separate component are merged as $p_t(r_x)$ and $r_x$ were in the same component.
+
         \item If $p_t(r_x) > r_y$:
         \begin{itemize}
-          \item If $p(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
-          \item If $p(r_x) \neq r_x$, $(p_{t+1}(r_x) = r_y)$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Also, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
+          \item If $p_t(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$. \\
+            Then $union\_graph_t = union\_graph_{t+1}$ as $tasks_t \setminus tasks_{t+1} = {(r_x, r_y)}$.
+          \item If $p_t(r_x) \neq r_x$, $(r_x, r_y)$ replaces $(r_x, p_t(r_x))$ in $dset_{t+1}$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. \\
+            All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Moreover, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
         \end{itemize}
       \end{itemize}
     \end{proof}
 
     \begin{lemma}
-      Algorithm \ref{algo:handle_task} halts.
+      \label{lemma:halt}
+      Runing algorithm \ref{algo:construct_dset_tasks} until there is no task will halt.
     \end{lemma}
+
     \begin{proof}
-      When a task $(r_x, r_y)$ is popped from $tasks$, either no new task is pushed to it, either a new task is pushed, that is greater than the one popped in the meaning of lexicographic order.
+      Let's assume that initially, $\forall (r_x, r_y) \in tasks, r_x > r_y$. Notice that new tasks created by algorithm \ref{algo:handle_task} will always fit to this criteria. \\
+      When a task $(r_x, r_y)$ is removed from $tasks$, either no new task is pushed to it, either a new task is pushed where this task is lower than the one removed in the meaning of total order $<_{lexrev}$ where $\forall (x_1, y_1), (x_2, y_2) \in V^2$:
+      $$(x_1, y_1) <_{lexrev} (x_2, y_2) \Longleftrightarrow y_1 < y_2 ~ \vee ~ (y_1 = y_2 ~ \wedge ~ x_1 < x_2)$$.
+    \end{proof}
+
+    \begin{theorem}[Correctness]
+      Runing algorithm \ref{algo:handle_task} until there is no more tasks will result in dset beiing a spaning forest of the initial graph.
+    \end{theorem}
+
+    \begin{proof}
+      Lemma \ref{lemma:halt} ensures that there is $t \in \mathbb{N}$ such that $tasks_t = \emptyset$. Finally, using lemma \ref{lemma:transitivity} we have:
+        $$G \sim tasks_0 = union\_graph_0 \sim union\_graph_1 \sim ... \sim union\_graph_t = dset_t$$.
     \end{proof}
 \end{document}
