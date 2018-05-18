@@ -18,8 +18,7 @@ int main(int argc, char** argv)
     FILE* input = stdin;
     FILE* output = stdout;
 
-    int index_from_zero = strncmp(argv[argc - 1], "indexfromzero", 13) == 0;    
-    printf("%s (%d) : %d\n", argv[2], argc, index_from_zero);
+    int index_from_zero = strncmp(argv[argc - 1], "indexfromzero", 13) == 0;
 
     // Open files for input and output
     if (argc > 1) {

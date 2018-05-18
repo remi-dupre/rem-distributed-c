@@ -287,7 +287,7 @@ void flush_buffered_graph(RemContext* context)
     #pragma omp parallel num_threads(NB_THREADS)
     {
         // Store localy border edges catched by this process
-        Graph* local_internal_graph = new_empty_graph(context->nb_vertices);
+        Graph local_internal_graph = *new_empty_graph(context->nb_vertices);
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
         #ifdef TIMERS
@@ -301,7 +301,7 @@ void flush_buffered_graph(RemContext* context)
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
                 if (!rem_insert_inplace(&edges[i], uf_parent)) {
-                    insert_edge(local_internal_graph, edges[i]);
+                    insert_edge(&local_internal_graph, edges[i]);
                 }
             }
         #ifdef TIMERS
@@ -339,6 +339,18 @@ void flush_buffered_graph(RemContext* context)
             }
         #endif
 
+        // Filter edges pushed to local_internal_graph
+        #pragma omp barrier
+        size_t new_size = 0;
+
+        for (size_t i = 0 ; i < local_internal_graph.nb_edges ; i++) {
+            if (!rem_compare(local_internal_graph.edges[i], uf_parent)) {
+                local_internal_graph.edges[new_size] = local_internal_graph.edges[i];
+                new_size++;
+            }
+        }
+        local_internal_graph.nb_edges = new_size;
+
         // position where this thread will insert in full graphs
         size_t border_pos_insertion, internal_pos_insertion;
 
@@ -348,7 +360,7 @@ void flush_buffered_graph(RemContext* context)
             border_graph->nb_edges += local_border_graph->nb_edges;
 
             internal_pos_insertion = internal_graph->nb_edges;
-            internal_graph->nb_edges += local_internal_graph->nb_edges;
+            internal_graph->nb_edges += local_internal_graph.nb_edges;
         }
 
         #pragma omp barrier
@@ -360,7 +372,7 @@ void flush_buffered_graph(RemContext* context)
         reserve(internal_graph, internal_graph->nb_edges);
 
         assert(border_pos_insertion + local_border_graph->nb_edges <= border_graph->nb_edges);
-        assert(internal_pos_insertion + local_internal_graph->nb_edges <= internal_graph->nb_edges);
+        assert(internal_pos_insertion + local_internal_graph.nb_edges <= internal_graph->nb_edges);
 
         memcpy(
             border_graph->edges + border_pos_insertion,
@@ -370,12 +382,12 @@ void flush_buffered_graph(RemContext* context)
 
         memcpy(
             internal_graph->edges + internal_pos_insertion,
-            local_internal_graph->edges,
-            local_internal_graph->nb_edges * sizeof(Edge)
+            local_internal_graph.edges,
+            local_internal_graph.nb_edges * sizeof(Edge)
         );
 
         delete_graph(local_border_graph);
-        delete_graph(local_internal_graph);
+        // delete_graph(&local_internal_graph);
     }
 
     #ifdef TIMERS
