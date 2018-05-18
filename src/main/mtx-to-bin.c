@@ -22,11 +22,13 @@ int main(int argc, char** argv)
     if (argc > 1) {
         input = fopen(argv[1], "rb");
 
-        if (argc == 2)
+        if (argc == 2 || strcmp(argv[2], "indexfromone") == 0)
             output = fopen(strcat(argv[1], ".bin"), "w");
         else
             output = fopen(argv[2], "w");
     }
+
+    int index_from_one = memcmp(argv[argc - 1], "indexfromone", 12) == 0;
 
     // Ignore comment lines
     char c;
@@ -54,6 +56,11 @@ int main(int argc, char** argv)
 
         // Catch the edge
         int rv = sscanf(line, "%u %u", &edges[i].x, &edges[i].y);
+
+        if (index_from_one) {
+            edges[i].x--;
+            edges[i].y--;
+        }
 
         if (rv != 2)
             continue;
