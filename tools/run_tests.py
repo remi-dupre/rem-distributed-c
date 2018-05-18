@@ -44,7 +44,7 @@ for i in range(len(inputs)):
     print('Convert mtx graphs to binary (%d/%d)' % (i+1, len(inputs)), end='\r')
     input = inputs[i]
 
-    command = ['./mtx-to-bin', 'inputs/' + input, 'indexfromone']
+    command = ['./mtx-to-bin', 'inputs/' + input, 'indexfromzero']
     subprocess.call(command)
 
 print()

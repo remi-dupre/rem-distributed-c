@@ -18,17 +18,18 @@ int main(int argc, char** argv)
     FILE* input = stdin;
     FILE* output = stdout;
 
+    int index_from_zero = strncmp(argv[argc - 1], "indexfromzero", 13) == 0;    
+    printf("%s (%d) : %d\n", argv[2], argc, index_from_zero);
+
     // Open files for input and output
     if (argc > 1) {
         input = fopen(argv[1], "rb");
 
-        if (argc == 2 || strcmp(argv[2], "indexfromone") == 0)
+        if (argc == 2 || strcmp(argv[2], "indexfromzero") == 0)
             output = fopen(strcat(argv[1], ".bin"), "w");
         else
             output = fopen(argv[2], "w");
     }
-
-    int index_from_one = memcmp(argv[argc - 1], "indexfromone", 12) == 0;
 
     // Ignore comment lines
     char c;
@@ -57,7 +58,7 @@ int main(int argc, char** argv)
         // Catch the edge
         int rv = sscanf(line, "%u %u", &edges[i].x, &edges[i].y);
 
-        if (index_from_one) {
+        if (!index_from_zero) {
             edges[i].x--;
             edges[i].y--;
         }
