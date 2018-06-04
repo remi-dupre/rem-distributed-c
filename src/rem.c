@@ -7,7 +7,7 @@ void rem_update(const Edge* edges, size_t nb_edges, Node* uf_parent)
         rem_insert(edges[i], uf_parent);
 }
 
-void rem_shared_update(Edge* edges, size_t nb_edges, Node* uf_parent, int nb_threads)
+void rem_shared_update(Edge* edges, size_t nb_edges, Node* uf_parent, int nb_threads, bool skip_insert)
 {
     int nb_working = nb_threads;
 
@@ -24,40 +24,45 @@ void rem_shared_update(Edge* edges, size_t nb_edges, Node* uf_parent, int nb_thr
         while (nb_working > 0) {
             size_t new_end = begin;
 
-            for (size_t i = begin ; i < end ; i++) {
-                Edge edge = edges[i];
+            if (!skip_insert) {
+                for (size_t i = begin ; i < end ; i++) {
+                    Edge edge = edges[i];
 
-                #define p(x) (uf_parent[x])
-                while (p(edge.x) != p(edge.y)) {
-                    if (p(edge.x) > p(edge.y)) {
-                        if(edge.x == p(edge.x)) {
-                            p(edge.x) = p(edge.y);
-                            edges[new_end] = edge;
-                            new_end++;
+                    #define p(x) (uf_parent[x])
+                    while (p(edge.x) != p(edge.y)) {
+                        if (p(edge.x) > p(edge.y)) {
+                            if(edge.x == p(edge.x)) {
+                                p(edge.x) = p(edge.y);
+                                edges[new_end] = edge;
+                                new_end++;
+                            }
+                            else {
+                                const Node z = p(edge.x);
+                                p(edge.x) = p(edge.y);
+                                edge.x = z;
+                            }
                         }
                         else {
-                            const Node z = p(edge.x);
-                            p(edge.x) = p(edge.y);
-                            edge.x = z;
+                            if (edge.y == p(edge.y)) {
+                                p(edge.y) = p(edge.x);
+                                edges[new_end] = edge;
+                                new_end++;
+                            }
+                            else {
+                                const Node z = p(edge.y);
+                                p(edge.y) = p(edge.x);
+                                edge.y = z;
+                            }
                         }
                     }
-                    else {
-                        if (edge.y == p(edge.y)) {
-                            p(edge.y) = p(edge.x);
-                            edges[new_end] = edge;
-                            new_end++;
-                        }
-                        else {
-                            const Node z = p(edge.y);
-                            p(edge.y) = p(edge.x);
-                            edge.y = z;
-                        }
-                    }
+                    #undef p
                 }
-                #undef p
+
+                end = new_end;
+                new_end = begin;
             }
-            end = new_end;
-            new_end = begin;
+
+            skip_insert = false;
 
             #pragma omp barrier
             for (size_t i = begin ; i < end ; i++) {

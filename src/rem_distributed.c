@@ -394,7 +394,7 @@ void flush_buffered_graph(RemContext* context)
         context->time_flushing = time_ms() - context->time_flushing;
     #endif
 
-    rem_shared_update(internal_graph->edges, internal_graph->nb_edges, uf_parent, NB_THREADS);
+    rem_shared_update(internal_graph->edges, internal_graph->nb_edges, uf_parent, NB_THREADS, true);
 
     delete_graph(internal_graph);
     delete_graph(context->buffer_graph);

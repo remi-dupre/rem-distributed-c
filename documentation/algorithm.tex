@@ -1,6 +1,7 @@
 \documentclass[12px]{article}
 
 \usepackage[hidelinks]{hyperref}
+\usepackage{pgf}
 
 % Algorithmic packages
 \usepackage{amsfonts}
@@ -21,32 +22,90 @@
 \begin{document}
   \maketitle
 
-  \section{Algorithm}
-  Assumptions:
-  \begin{itemize}
-    \item $\forall x, p(x) \leq x$.
-    \item Each process can determine the owner of any node.
-  \end{itemize}
+  \section{REM}
+    \begin{algorithm}
+      \caption{Union-find operation through REM algorithm}
+      \begin{algorithmic}[1]
+        \Function{rem-union-find}{$x$, $y$, $p$}
+          \State $r_x \gets x$
+          \State $r_y \gets y$
+          \State
+          \While {$p(r_x) \neq p(r_y)$}
+            \If {$p(r_x) > p(r_y)>$}
+              \If {$p(r_x) = r_x$}
+                \State $p(r_x) \gets p(r_y)$
+                \State \Return false
+              \Else
+                \State $p_{r_x} \gets p(r_x)$
+                \State $p(r_x) \gets p(r_y)$
+                \State $r_x \gets p_{r_x}$
+              \EndIf
+            \Else
+              \If {$p(r_y) = r_y$}
+                \State $p(r_y) \gets p(r_x)$
+                \State \Return false
+              \Else
+                \State $p_{r_y} \gets p(r_y)$
+                \State $p(r_y) \gets p(r_x)$
+                \State $r_y \gets p_{r_y}$
+              \EndIf
+            \EndIf
+          \EndWhile
+          \State
+          \State \Return true
+        \EndFunction
+      \end{algorithmic}
+    \end{algorithm}
 
-  \begin{algorithm}
-    \caption{Handle one request $(r_x, r_y)$ on $owner(r_x)$}
-    \begin{algorithmic}[1]
-      \State $r_x \gets local\_root(r_x)$
-      \State
-      \If {$p(r_x) < r_y$}
-        \State request $owner(r_y)$ with parameter $(r_y, p(r_x))$
-      \ElsIf {$p(r_x) > r_y$}
-        \If {$p(r_x) = r_x$}
-          \State $p(r_x) \gets r_y$
-        \Else
-          \State $z \gets p(r_x)$
-          \State $p(r_x) \gets r_y$
-          \State request $owner(z)$ with parameter $(z, r_y)$
-        \EndIf
-      \EndIf
-    \end{algorithmic}
-    \label{algo:handle_task}
-  \end{algorithm}
+  \section{Distributed algorithm}
+    Assumptions:
+    \begin{itemize}
+      \item $\forall x, p(x) \leq x$.
+      \item Each process can determine the owner of any node.
+    \end{itemize}
+
+    \begin{algorithm}
+      \caption{Prepare distributed algorithm}
+      \begin{algorithmic}[1]
+        \State $tasks = \emptyset$
+        \For{$i = 0$ to $n$}
+          \State $p(i) \gets i$   \Comment{Main disjoint set structure}
+          \State $p'(i) \gets i$  \Comment{Disjoint set used to filter edges to keep}
+        \EndFor
+        \State
+        \ForAll{$(x, y)$ in $G$}
+          \If {$owner(y) = process$} \Comment{We assumed that $owner(x) = process$}
+            \If {not \Call{rem-union-find}{$x$, $y$, $p$}}
+              \State \Call{rem-uninon-find}{$x$, $y$, $p'$}
+            \EndIf
+          \ElsIf {\Call{rem-union-find}{$x$, $y$, $p'$}}
+            \State $tasks \gets tasks \cup \{(x, y)\}$
+          \EndIf
+        \EndFor
+      \end{algorithmic}
+    \end{algorithm}
+
+    \begin{algorithm}
+      \caption{Handle one request $(r_x, r_y)$ on $process = owner(r_x)$}
+      \begin{algorithmic}[1]
+        \Function{handle}{$r_x$, $r_y$, $p$}
+          \State $r_x \gets$ \Call{local-root}{$r_x$, $p$}
+          \State
+          \If {$p(r_x) < r_y$}
+            \State request $owner(r_y)$ with parameter $(r_y, p(r_x))$
+          \ElsIf {$p(r_x) > r_y$}
+            \If {$p(r_x) = r_x$}
+              \State $p(r_x) \gets r_y$
+            \Else
+              \State $p_{r_x} \gets p(r_x)$
+              \State $p(r_x) \gets r_y$
+              \State request $owner(z)$ with parameter $(p_{r_x}, r_y)$
+            \EndIf
+          \EndIf
+        \EndFunction
+      \end{algorithmic}
+      \label{algo:handle_task}
+    \end{algorithm}
 
 
   \section{Correctness}
@@ -121,4 +180,20 @@
       Lemma \ref{lemma:halt} ensures that there is $t \in \mathbb{N}$ such that $tasks_t = \emptyset$. Finally, using lemma \ref{lemma:transitivity} we have:
         $$G \sim tasks_0 = union\_graph_0 \sim union\_graph_1 \sim ... \sim union\_graph_t = dset_t$$.
     \end{proof}
+
+
+  \section{Results}
+    \subsection{Observations}
+      \subsubsection{Performance loss for a low number of nodes}
+        This algorithm is usually slower when one to two nodes are used to run it, whereas the only one comparison is added for each edge (checking if the second vertex of each edge belongs to the current process, it results in one modulus operation and one comparison per edge).
+
+        It seems that checking this condition in an empty loop over all edges takes more than one third of the total time taken by the local step of the algorithm.
+
+
+    \subsection{Last run}
+      \scalebox{0.5}{\input{../graph/pgf/web.pgf}}
+      \scalebox{0.5}{\input{../graph/pgf/web-uk.pgf}}
+      \scalebox{0.5}{\input{../graph/pgf/twitter.pgf}}
+      \scalebox{0.5}{\input{../graph/pgf/wikipedia.pgf}}
+      \scalebox{0.5}{\input{../graph/pgf/random24_64.pgf}}
 \end{document}

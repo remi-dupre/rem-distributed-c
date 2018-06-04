@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
     // Execute raw REM
     time_t timer = time_ms();
-    rem_shared_update(graph->edges, graph->nb_edges, uf_parent, 24);
+    rem_shared_update(graph->edges, graph->nb_edges, uf_parent, 24, false);
     timer = time_ms() - timer;
 
     // Output to log filss

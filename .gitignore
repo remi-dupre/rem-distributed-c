@@ -5,7 +5,7 @@
 inputs/random_*
 inputs/*.bin
 inputs/*.out
-*graph/
+*-*_graph*/
 
 # Compilation files
 build/
