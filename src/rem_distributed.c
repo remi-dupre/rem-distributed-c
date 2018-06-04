@@ -279,11 +279,6 @@ void flush_buffered_graph(RemContext* context)
 
     #define own(x) ((int) (x) % nb_process)
 
-    #define NB_THREADS 4
-    #ifndef NB_THREADS
-        #define NB_THREADS 1
-    #endif
-
     #pragma omp parallel num_threads(NB_THREADS)
     {
         // Store localy border edges catched by this process

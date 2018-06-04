@@ -1,6 +1,11 @@
 #ifndef rem_distributed
 #define rem_distributed
 
+#ifndef NB_THREADS
+    #define NB_THREADS 2
+#endif
+
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>

@@ -106,6 +106,7 @@ int main(int argc, char** argv) {
         fprintf(logs, " (%s)\n", time_str);
 
         fprintf(logs, "Number of process: %d\n", nb_process);
+        fprintf(logs, "Number of threads per process: %d\n", NB_THREADS);
         fprintf(logs, "Number of iterations per cycle: %d\n", MAX_LOCAL_ITER);
         fprintf(logs, "System's sizes: node = %luB, edge = %luB\n", sizeof(Node), sizeof(Edge));
         fprintf(logs, "--\n");
