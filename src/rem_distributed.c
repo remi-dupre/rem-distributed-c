@@ -460,8 +460,8 @@ static inline Node local_root(Node node, Node* uf_parent, int process, int nb_pr
     #define own(x) ((int) (x) % nb_process)
     #define p(x) (uf_parent[x])
 
-    static int anc_container_size = 0;
-    static Node* ancesters = NULL;
+    int anc_container_size = 0;
+    Node* ancesters = NULL;
     int nb_ancesters = 0;
 
     while (p(node) != node && own(p(node)) == process) {
@@ -493,14 +493,14 @@ void process_distributed(RemContext* context)
     push_tasks(&todo, context_cpy.border_graph->edges, context_cpy.border_graph->nb_edges);
 
     // Create buffers of tasks to send to other process
-    Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * sizeof(Edge));
+    Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * NB_THREADS * sizeof(Edge));
     int* to_send_sizes = malloc(context_cpy.nb_process * sizeof(int));
     int* to_send_displ = malloc(context_cpy.nb_process * sizeof(int));
     int* fake_sizes = malloc(context_cpy.nb_process * sizeof(int));
 
     for (int p = 0 ; p < context_cpy.nb_process ; p++) {
         to_send_sizes[p] = 0;
-        to_send_displ[p] = p * MAX_LOCAL_ITER;
+        to_send_displ[p] = p * MAX_LOCAL_ITER * NB_THREADS;
         fake_sizes[p] = -1;
     }
 
@@ -518,34 +518,73 @@ void process_distributed(RemContext* context)
             context->time_step_proc[context->nb_steps] = time_ms();
         #endif
 
-        int t = 0;
-        while (t < MAX_LOCAL_ITER && !is_empty_heap(todo)) {
-            Edge r = pop_task(&todo);
-            assert(own(r.x) == context_cpy.process);
+        // Pull edges from the heap, parallelised
+        #pragma omp parallel num_threads(NB_THREADS)
+        {
+            int thread_id = omp_get_thread_num();
+            size_t nb_pop = (todo.nb_tasks + thread_id) / NB_THREADS;
 
-            t++;
-            r.x = lroot(r.x);
+            if (nb_pop > MAX_LOCAL_ITER)
+                nb_pop = MAX_LOCAL_ITER;
 
-            if (p(r.x) < r.y) {
-                int to_send_pos = to_send_displ[own(r.y)] + to_send_sizes[own(r.y)];
-                to_send[to_send_pos].x = r.y;
-                to_send[to_send_pos].y = p(r.x);
-                to_send_sizes[own(r.y)] += 1;
-            }
-            else if (p(r.x) > r.y) {
-                if (p(r.x) == r.x) {
-                    p(r.x) = r.y;
-                }
-                else {
-                    int to_send_pos = to_send_displ[own(p(r.x))] + to_send_sizes[own(p(r.x))];
-                    to_send[to_send_pos].x = p(r.x);
-                    to_send[to_send_pos].y = r.y;
-                    to_send_sizes[own(p(r.x))] += 1;
+            size_t begin, end;
 
-                    p(r.x) = r.y;
-                }
+            #pragma omp critical (pull_tasks)
+            {
+                end = todo.nb_tasks;
+                todo.nb_tasks -= nb_pop;
+                begin = todo.nb_tasks;
             }
 
+            assert(begin <= end);
+            Graph loc_to_send[context_cpy.nb_process];
+
+            for (int i = 0 ; i < context_cpy.nb_process ; i++)
+                loc_to_send[i] = *new_empty_graph(context_cpy.nb_vertices);
+
+            // Handle tasks
+            for (size_t i = begin ; i < end ; i++) {
+                Edge r = todo.tasks[i];
+                assert(own(r.x) == context_cpy.process);
+
+                r.x = lroot(r.x);
+
+                if (p(r.x) < r.y) {
+                    Edge inserted = {.x = r.y, .y = p(r.x)};
+                    insert_edge(&loc_to_send[own(inserted.x)], inserted);
+                }
+                else if (p(r.x) > r.y) {
+                    if (p(r.x) == r.x) {
+                        p(r.x) = r.y;
+                    }
+                    else {
+                        Edge inserted = {.x = p(r.x), .y = r.y};
+                        insert_edge(&loc_to_send[own(inserted.x)], inserted);
+                        p(r.x) = r.y;
+                    }
+                }
+            }
+
+            // Insert new tasks in the full structure
+            size_t insert_pos[context_cpy.nb_process];
+
+            #pragma omp critical (push_tasks)
+            {
+                for (int p = 0 ; p < context_cpy.nb_process ; p++) {
+                    assert(to_send_sizes[p] < MAX_LOCAL_ITER * NB_THREADS);
+                    insert_pos[p] = to_send_displ[p] + to_send_sizes[p];
+                    to_send_sizes[p] += loc_to_send[p].nb_edges;
+                }
+            }
+
+            for (int p = 0 ;  p < context_cpy.nb_process ; p++) {
+                memcpy(
+                    to_send + insert_pos[p],
+                    loc_to_send[p].edges,
+                    loc_to_send[p].nb_edges * sizeof(Edge)
+                );
+                free(loc_to_send[p].edges);
+            }
         }
 
         #ifdef TIMERS

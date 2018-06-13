@@ -6,6 +6,7 @@ inputs/random_*
 inputs/*.bin
 inputs/*.out
 *-*_graph*/
+graph/
 
 # Compilation files
 build/
@@ -25,3 +26,11 @@ callgrind.*
 *.out
 *.log
 *.csv
+
+# Documentation's build
+*.pdf
+*.aux
+*.nav
+*.snm
+*.toc
+*.synctex.gz
