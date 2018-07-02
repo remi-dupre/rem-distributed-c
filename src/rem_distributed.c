@@ -518,7 +518,7 @@ void process_distributed(RemContext* context)
             context->time_step_proc[context->nb_steps] = time_ms();
         #endif
 
-        // Pull edges from the heap, parallelised
+        // Pull edges from the heap, parallelized
         #pragma omp parallel num_threads(NB_THREADS)
         {
             int thread_id = omp_get_thread_num();

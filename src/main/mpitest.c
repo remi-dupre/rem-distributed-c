@@ -25,8 +25,13 @@ int main(int argc, char** argv) {
     // Open input file
     FILE* input = stdin;
 
-    if (argc > 1)
+    if (argc > 1) {
         input = fopen(argv[1], "rb");
+        if (input == NULL) {
+            perror("Error while accessing input file");
+            return -1;
+        }
+    }
 
     // Get general MPI informations
     int process, nb_process;
