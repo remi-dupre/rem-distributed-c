@@ -11,7 +11,7 @@ Building
 --------
 
 ### Dependancies
-This project is developped under **C 11**. The only extra dependancy is [**openmpi**](https://www.open-mpi.org/), that is available in most distribution's repositories.
+This project is developped under **C 11**. The only extra dependancy are [**openmpi**](https://www.open-mpi.org/) and [**openmp**](https://www.openmp.org/), that are available in most distribution's repositories.
 
 ### Build package
 Running **make** will create all binary files.
