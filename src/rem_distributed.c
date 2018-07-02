@@ -91,7 +91,7 @@ void send_graph(FILE* file, RemContext* context)
         for (Node i = 0 ; i <= load_size ; i++) {
             // Check if we need to insert "stop message"
             const bool is_last_edge = i == load_size && feof(file);
-            int edge_owner;
+            int edge_owner = -1;
 
             if (i == load_size && !is_last_edge) {
                 // This last step of the loop shouldn't insert anything
@@ -129,9 +129,12 @@ void send_graph(FILE* file, RemContext* context)
                 buffer_load[edge_owner]++;
             }
 
-            assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
+            if (!is_last_edge)
+                assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
 
             if (is_last_edge || (buffer_load[edge_owner] + 2) * sizeof(Edge) > MAX_COM_SIZE) {
+                assert(edge_owner == -1);
+
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
@@ -291,7 +294,7 @@ void flush_buffered_graph(RemContext* context)
 
         #pragma omp for
         for (size_t i = 0 ; i < nb_edges ; i++) {
-            assert(own(edges[i].x) == process);
+            (own(edges[i].x) == process);
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
