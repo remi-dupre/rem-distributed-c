@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
         FILE* csv = fopen("mpitest.csv", "a");
 
         if (csv_head) {
-            fprintf(csv, "start time;command;np;ipc;sending;local;distributed\n");
+            fprintf(csv, "start time;command;np;threads;ipc;sending;local;distributed\n");
         }
 
         long time_sending = t_end_send - t_start;
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
         // Write csv file
         fprintf(csv, "%s;", time_str);
         fprintf(csv, argv[argc-1]);
-        fprintf(csv, ";%d;%d", nb_process, MAX_LOCAL_ITER);
+        fprintf(csv, ";%d;%d;%d", nb_process, NB_THREADS, MAX_LOCAL_ITER);
         fprintf(csv, ";%ld;%ld;%ld\n", time_sending, time_localp, time_process);
 
         // Close files
