@@ -92,14 +92,14 @@
           \State $r_x \gets$ \Call{local-root}{$r_x$, $p$}
           \State
           \If {$p(r_x) < r_y$}
-            \State request $owner(r_y)$ with parameter $(r_y, p(r_x))$
+            \State send $(r_y, p(r_x))$ to $owner(r_y)$
           \ElsIf {$p(r_x) > r_y$}
             \If {$p(r_x) = r_x$}
               \State $p(r_x) \gets r_y$
             \Else
               \State $p_{r_x} \gets p(r_x)$
               \State $p(r_x) \gets r_y$
-              \State request $owner(z)$ with parameter $(p_{r_x}, r_y)$
+              \State send $(p_{r_x}, r_y)$ to $owner(z)$
             \EndIf
           \EndIf
         \EndFunction
@@ -113,11 +113,11 @@
   \subsection{Notations}
     In order to make the proof clearer, some of the structures will be simplified. The state of the algorithm can be sumed up with following structures:
 
-    \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm only the process owning $x$ knows the value of $p(x)$.
+    \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm however, only the process owning $x$ knows the value of $p(x)$.
 
-    \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle. These pairs can be an edge of the original graph, or a task sent by another process. As the proof will not need to order how the tasks are handled, it is enough to only consider the union all tasks received by all process.
+    \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle. Such a pair can be an edge of the original graph, or a task sent by another process. As the proof will not need to order how the tasks are handled, it is enough to only consider the union all tasks received by all process.
 
-    \paragraph{union\_graph} is the graph of all edges that the algorithm still kept memory of. $union\_graph = dset \cup tasks$.
+    \paragraph{union\_graph} is the graph of all edges that the algorithm still has in memory. $union\_graph = dset \cup tasks$.
 
     \paragraph{equivalence} a relation $\sim$ is defined as $G_1$ $\sim$ $G_2$ $\Leftrightarrow$ $G_1$ and $G_2$ have the same components. \\
 
@@ -128,7 +128,7 @@
       \caption{Construction of $dset_{t+1}$ and $tasks_{t+1}$}
       \begin{algorithmic}[1]
         \State $dset_{t+1} = dset_t$
-        \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ where $(r_x, r_y) \in tasks_t$
+        \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ for a $(r_x, r_y) \in tasks_t$
         \State Apply algorithm \ref{algo:handle_task} on $owner(r_x)$.
       \end{algorithmic}
       \label{algo:construct_dset_tasks}
@@ -143,9 +143,9 @@
     \end{lemma}
 
     \begin{proof}
-      At any t, the algorithm pops the edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph_{t+1}$ and that no other component is merged.
+      At any step $t$, the algorithm pops an edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph_{t+1}$ and that no other component is merged.
       \begin{itemize}
-        \item If $p_t(r_x) = r_y$, algorithm \ref{algo:handle_task} doesn't change $dset_{t+1}$ and $tasks_{t+1}$. \\
+        \item If $p_t(r_x) = r_y$, algorithm \ref{algo:handle_task} doesn't change $dset_{t+1}$ or $tasks_{t+1}$. \\
           Then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
 
         \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks_{t+1}$. \\
@@ -195,5 +195,5 @@
       \scalebox{0.5}{\input{../graph/pgf/web-uk.pgf}}
       \scalebox{0.5}{\input{../graph/pgf/twitter.pgf}}
       \scalebox{0.5}{\input{../graph/pgf/wikipedia.pgf}}
-      \scalebox{0.5}{\input{../graph/pgf/random24_64.pgf}}
+      % \scalebox{0.5}{\input{../graph/pgf/random24_64.pgf}}
 \end{document}

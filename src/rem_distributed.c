@@ -294,7 +294,7 @@ void flush_buffered_graph(RemContext* context)
 
         #pragma omp for
         for (size_t i = 0 ; i < nb_edges ; i++) {
-            (own(edges[i].x) == process);
+            assert(own(edges[i].x) == process);
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm

@@ -11,7 +11,6 @@ void rem_shared_update(Edge* edges, size_t nb_edges, Node* uf_parent, int nb_thr
 {
     int nb_working = nb_threads;
 
-
     #pragma omp parallel num_threads(nb_threads)
     {
         bool done = false;

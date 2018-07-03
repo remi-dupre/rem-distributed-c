@@ -10,33 +10,37 @@
 
 
 int main(int argc, char** argv) {
+    // Initialisation of mpi
+    MPI_Init(NULL, NULL);
+
+    // Get general MPI informations
+    int process, nb_process;
+    MPI_Comm_rank(MPI_COMM_WORLD, &process);
+    MPI_Comm_size(MPI_COMM_WORLD, &nb_process);
+
     // Timing values
     long t_start;
     long t_end_local;
     long t_end_send;
     long t_end_process;
 
-    // Initialisation of mpi
-    MPI_Init(NULL, NULL);
-
     MPI_Type_contiguous(sizeof(Edge), MPI_CHAR, &MPI_EDGE);
     MPI_Type_commit(&MPI_EDGE);
 
-    // Open input file
-    FILE* input = stdin;
+    FILE* input = NULL;
 
-    if (argc > 1) {
-        input = fopen(argv[1], "rb");
-        if (input == NULL) {
-            perror("Error while accessing input file");
-            return -1;
+    // Open input file
+    if (process == 0) {
+        input = stdin;
+
+        if (argc > 1) {
+            input = fopen(argv[1], "rb");
+            if (input == NULL) {
+                perror("Error while accessing input file");
+                return -1;
+            }
         }
     }
-
-    // Get general MPI informations
-    int process, nb_process;
-    MPI_Comm_rank(MPI_COMM_WORLD, &process);
-    MPI_Comm_size(MPI_COMM_WORLD, &nb_process);
 
     // Start REM algorithm
     t_start = time_ms();
@@ -62,7 +66,7 @@ int main(int argc, char** argv) {
     debug_structure(context);
 
     // Close input file
-    if (argc > 1)
+    if (process == 0 && argc > 1)
         fclose(input);
 
     // Initialise log files
