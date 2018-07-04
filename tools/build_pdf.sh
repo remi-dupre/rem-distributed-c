@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 to_build="algorithm graphs report"
 
 cd documentation
@@ -11,5 +11,5 @@ do
     xelatex $file
     xelatex $file
 
-    cp $file.pdf pdf/ 
+    cp $file.pdf pdf/
 done
