@@ -34,3 +34,8 @@ callgrind.*
 *.snm
 *.toc
 *.synctex.gz
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
