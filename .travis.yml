@@ -5,6 +5,7 @@ addons:
      - libopenmpi-dev
      - texlive
      - texlive-latex-extra
+     - texlive-xetex
 
 install: make debug
 
