@@ -26,16 +26,17 @@
     \subsection{Union-Find algorithms}
       \subsubsection{Disjoint set structure}
         % Definition of a disjoint set structure
-        The disjoint set structure is a very classical structure that represents a partition of a finite set $X = \biguplus\limits_{i \in I} S_i$. It is meant to allow two fast queries:
+        The disjoint set structure is a very classical structure that represents a partition of a finite set $X = \biguplus\limits_{i \in I} S_i$. It is meant to allow three fast queries:
         \begin{itemize}
+          \item $\Call{makeset}{a}$: add the element $a$ to the structure, initially in a singleton.
           \item $\Call{Union}{a, b}$: alter the structure to merge the set $a$ belongs to and the set $b$ belongs to. After such an operation, $\exists! i \in I~/~a \in S_i \land b \in S_i$.
           \item $\Call{find}{a}$: give a unique representative of the set $a$ belongs to. It means that $\forall a, b \in X,~\Call{find}{a} = \Call{find}{b} \Leftrightarrow \exists! i \in I~/~a \in S_i \land b \in S_i$.
         \end{itemize}
-        In practice, it is usually represented by a forest of the elements of $X$, $\textsc{union}$ merges two trees and $\textsc{find}$ returns the root of a tree given one of its nodes.
+        In practice, it is usually represented by a forest of the elements of $X$, $\textsc{makeset}$ builds a tree containing only its root, $\textsc{union}$ merges two trees and $\textsc{find}$ returns the root of a tree given one of its nodes.
         In a program, such a forest is represented by an array of size $|X|$, assuming that $X = \llbracket 0, |X|-1 \rrbracket$, the element of index $a$ will be $b$ if b is the parent of $a$ in a tree, or $a$ if $a$ is a root.
 
         \begin{figure}[h]
-          \caption{Disjoint set structure representing $\{\{0, 1, 2\}, \{3\}, \{4, 5\}\}$}
+          \caption{A disjoint set structure representing $\{\{0, 1, 2\}, \{3\}, \{4, 5\}\}$}
           \centering
           \vspace{0.2cm}
           \begin{tikzpicture}[shorten >=1pt]
@@ -72,8 +73,31 @@
           }
         \end{figure}
 
-      \subsubsection{Classical REM algorithm}
+      \subsubsection{Classical union-find algorithm}
         % Classical th. implementation of union-find, explaination why (th. complexity), applications ?
+        A very typical application of this structure is to find a spaning forest of an undirected graph. A general algorithm used to answer this problem is called \emph{union-find} (alg. \ref{alg:union-find}).
+
+        Typically, \textsc{find} runs over the tree until it reaches the root, keeps track of every nodes on the path and finally set their parent to be the root. In this case \textsc{union} doesn't need to compress the trees and will just make one of the roots be parent of the other, the new root can be chosen arbitrary or given a criteria (index, rank, ...).
+
+      \begin{algorithm}[bh]
+        \caption{General structure of union-find}
+        \label{alg:union-find}
+        \begin{algorithmic}[1]
+          \State $F \leftarrow \emptyset$
+          \ForAll {$x \in V$}
+            \State \Call{makeset}{x}
+          \EndFor
+          \ForAll {$(x, y) \in E$}
+            \If {$\Call{find}{x} \neq \Call{find}{y}$}
+              \State $\Call{union}{x, y}$
+            \EndIf
+          \EndFor
+        \end{algorithmic}
+      \end{algorithm}
+
+      This algorithm can actualy be implemented with many variations (\citeA{ufexp10}), where a typical goal is to make sure that trees never get too high, thus compressing the path leading to the root while processing \textsc{find} operation.
+
+
       \subsubsection{REM algorithm}
         % Definition and analysis of REM, explaination on why it is awesome
 
@@ -98,6 +122,7 @@
   \section{Appendices}
     % Proofs, maybe extra datas
     \citeA{ufdist09}
+    \citeA{ufexp10}
 
 
   \bibliographystyle{apacite}
