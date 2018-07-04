@@ -2,7 +2,7 @@ REM Distributed [![Build Status](https://travis-ci.org/remi-dupre/rem-distribute
 ===============
 C implementation of a distributed version of REM's algorithm to process spanning forests.
 
-This work was initiated by Fredrik Manne, and implemented by Rémi Dupré. It is based on some previous work:
+This work was initiated by Fredrik Manne, and implemented by Rémi Dupré during an internship in the UiB, Bergen. It is based on some previous work:
  - [Experiments on Union-Find Algorithms for the Disjoint-Set Data Structure](http://www.ii.uib.no/~fredrikm/fredrik/papers/SEA2010.pdf), *Md. Mostofa Ali Patwary, Jean Blair, and Fredrik Manne*
  - [A Scalable Parallel Union-Find Algorithm for Distributed Memory Computers](http://www.ii.uib.no/~fredrikm/fredrik/papers/PPAM2009.pdf), *Fredrik Manne and Md. Mostofa Ali Patwary*
 
