@@ -3,9 +3,20 @@ addons:
     packages:
      - openmpi-bin
      - libopenmpi-dev
+     - texlive
+     - texlive-latex-extra
 
 install: make debug
 
 script:
  - python3 tools/run_tests.py
  - cat mpitest.log
+ - tools/build_pdf.sh
+
+deploy:
+  - provider: pages
+    local_dir: documentation/pdf
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    on:
+      branch: master
