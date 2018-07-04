@@ -3,9 +3,7 @@ addons:
     packages:
      - openmpi-bin
      - libopenmpi-dev
-     - texlive
-     - texlive-latex-extra
-     - texlive-xetex
+     - texlive-full
 
 install: make debug
 
