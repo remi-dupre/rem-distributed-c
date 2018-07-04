@@ -143,6 +143,12 @@ plot_setup = {
         'label': 'shared memory\'s algorithm (24 threads)',
         'style': 'r-'
     },
+    'np': {
+        'label': 'number of process (distributed memory)'
+    },
+    'threads': {
+        'label': 'number of threads (shared memory) per process'
+    }
 }
 
 for infile in datas:
@@ -154,7 +160,7 @@ for infile in datas:
 
     figure = plt.figure(infile)
     plt.title('REM : ' + name.title())
-    plt.xlabel('Number of processes')
+    plt.xlabel(plot_setup[x_axis]['label'])
     plt.ylabel('Time spent (ms)')
 
     for curve in range(len(y_values)):
