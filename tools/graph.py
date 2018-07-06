@@ -106,8 +106,8 @@ with open(FILE_SHAR) as file:
         if infile in datas:
             datas[infile]['shr'] = sum(values[infile]) / len(values[infile])
 
-datas[infile]['cst'] = [datas[infile]['cst']] * len(datas[infile]['np'])
-datas[infile]['shr'] = [datas[infile]['shr']] * len(datas[infile]['np'])
+        datas[infile]['cst'] = [datas[infile]['cst']] * len(datas[infile]['np'])
+        datas[infile]['shr'] = [datas[infile]['shr']] * len(datas[infile]['np'])
 
 
 # Choose axis to plot
@@ -117,6 +117,7 @@ filter = input('Choose a filter on datas to keep [True]: ')
 
 if not x_axis: x_axis = 'np'
 if not y_axis: y_axis = 'cst,shr,loc,dst,sum'
+if not filter: filter = 'True'
 
 y_axis = y_axis.split(',')
 
@@ -155,8 +156,18 @@ for infile in datas:
     name = infile.split('/')[-1].split('.')[0]
 
     # Select axis datas
-    x_values = [val for val in datas[infile][x_axis] if True]
-    y_values = [[val for val in datas[infile][curve] if True] for curve in y_axis]
+    file_datas = datas[infile]
+    x_values = [
+        file_datas[x_axis][i]
+        for i in range(len(file_datas[x_axis]))
+        if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
+    ]
+    y_values = [[
+            file_datas[curve][i]
+            for i in range(len(file_datas[curve]))
+            if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
+        ] for curve in y_axis
+    ]
 
     figure = plt.figure(infile)
     plt.title('REM : ' + name.title())

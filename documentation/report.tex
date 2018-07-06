@@ -152,7 +152,8 @@
 
       In Rem's algorithm, line 5 and 6 of algorithm \ref{alg:union-find} are replaced by algorithm \ref{alg:rem} which handles find operations, merging components if they are disconnected and compression in one loop.
 
-      \todo[color=blue!30,fancyline]{Quick complexity review}
+      A union-find algorithm can typically be implemented to fit a worst case complexity of $O(n + m \cdot \alpha(m, n))$ where $\alpha$ is the inverse of Ackermann's function, $n = |V|$ and $m = |E|$. Rem's algorithm however, has a worst case complexity in $O(n + m^2)$.
+      \todo[color=blue!30,fancyline]{Reference}
 
     \subsection{Distributed algorithms}
       % Introduction to distributed algorithmic, existing implementation
