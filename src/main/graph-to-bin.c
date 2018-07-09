@@ -28,14 +28,14 @@ int main(int argc, char** argv)
 
     // Graph's metadata
     Node nb_vertices;
-    fscanf(input, "%u", &nb_vertices);
+    fscanf(input, "%lu", &nb_vertices);
     fwrite(&nb_vertices, sizeof(Node), 1, output);
 
     // Read all edges
     Edge* edges = malloc(BUFFER_SIZE);
 
     int i = 0;
-    while (fscanf(input, "%u %u", &edges[i].x, &edges[i].y) > 0) {
+    while (fscanf(input, "%lu %lu", &edges[i].x, &edges[i].y) > 0) {
         assert(edges[i].x < nb_vertices);
         assert(edges[i].y < nb_vertices);
 

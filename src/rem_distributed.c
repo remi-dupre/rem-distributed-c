@@ -725,11 +725,11 @@ void debug_structure(const RemContext* context)
         }
 
         // Print number of nodes
-        printf("%u\n", context->nb_vertices);
+        printf("%lu\n", context->nb_vertices);
 
         // Print edges
         for (int i = 0 ; i < total_size ; i++)
-            printf("%u %u\n", g[all_edges[i].x], g[all_edges[i].y]);
+            printf("%lu %lu\n", g[all_edges[i].x], g[all_edges[i].y]);
 
         free(g);
     }
@@ -749,7 +749,7 @@ void debug_context(const RemContext* context)
         printf("# Border graph contains %ld edges.\n", context->border_graph->nb_edges);
 
     // for (int i = 0 ; i < context->border_graph->nb_edges ; i++)
-    //     printf("# (%u, %u)\n", context->border_graph->edges[i].x, context->border_graph->edges[i].y);
+    //     printf("# (%lu, %lu)\n", context->border_graph->edges[i].x, context->border_graph->edges[i].y);
 }
 
 void debug_timers(const RemContext* context)

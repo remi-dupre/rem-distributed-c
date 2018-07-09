@@ -53,7 +53,7 @@ Graph* read_as_ascii(FILE* file)
 
     Graph* graph = new_empty_graph(n);
 
-    while(fscanf(file, "%u %u\n", &edge.x, &edge.y) == 1)
+    while(fscanf(file, "%lu %lu\n", &edge.x, &edge.y) == 1)
         insert_edge(graph, edge);
 
     return graph;

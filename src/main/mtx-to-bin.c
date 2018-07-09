@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     // Graph's metadata line
     Node nb_vertices;
     fgets(line, BUFFER_SIZE, input);
-    sscanf(line, "%u", &nb_vertices);
+    sscanf(line, "%lu", &nb_vertices);
     fwrite(&nb_vertices, sizeof(Node), 1, output);
 
     // Read all edges
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         fgets(line, BUFFER_SIZE, input);
 
         // Catch the edge
-        int rv = sscanf(line, "%u %u", &edges[i].x, &edges[i].y);
+        int rv = sscanf(line, "%lu %lu", &edges[i].x, &edges[i].y);
 
         if (!index_from_zero) {
             edges[i].x--;

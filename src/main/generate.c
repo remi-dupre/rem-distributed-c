@@ -25,11 +25,11 @@ int main(int argc, char** argv)
         }
 
         const Node nb_vertices = atoi(argv[2]);
-        printf("%u\n", nb_vertices);
+        printf("%lu\n", nb_vertices);
 
         for (Node x = 0 ; x < nb_vertices ; x++)
             for (Node y = 0 ; y < x ; y++)
-                printf("%u %u\n", x, y);
+                printf("%lu %lu\n", x, y);
     }
 
     if (strcmp(argv[1], "random") == 0) {
@@ -40,12 +40,12 @@ int main(int argc, char** argv)
 
         const Node nb_vertices = atoi(argv[2]);
         const Node nb_edges = atoi(argv[3]);
-        printf("%u\n", nb_vertices);
+        printf("%lu\n", nb_vertices);
 
         for (Node i = 0 ; i < nb_edges ; i++) {
             const Node x = rand() % nb_vertices;
             const Node y = rand() % nb_vertices;
-            printf("%u %u\n", x, y);
+            printf("%lu %lu\n", x, y);
         }
     }
 
@@ -61,6 +61,6 @@ int main(int argc, char** argv)
         for (Node x = 0 ; x < nb_vertices ; x++)
             for (Node y = 0 ; y < nb_vertices ; y++)
                 if (rand() < density * RAND_MAX)
-                    printf("%u %u\n", x, y);
+                    printf("%lu %lu\n", x, y);
     }
 }

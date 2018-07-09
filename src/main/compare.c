@@ -30,8 +30,8 @@ int main(int argc, char** argv) {
     Node nb_vertices1;
     Node nb_vertices2;
 
-    fscanf(file1, "%u", &nb_vertices1);
-    fscanf(file2, "%u", &nb_vertices2);
+    fscanf(file1, "%lu", &nb_vertices1);
+    fscanf(file2, "%lu", &nb_vertices2);
 
     if (nb_vertices1 != nb_vertices2) {
         printf("The two graph have separate components (graphs have different number of vertices).\n");
@@ -50,10 +50,10 @@ int main(int argc, char** argv) {
     // Load edges from files
     Edge edge;
 
-    while (fscanf(file1, "%u %u", &edge.x, &edge.y) > 0)
+    while (fscanf(file1, "%lu %lu", &edge.x, &edge.y) > 0)
         rem_update(&edge, 1, uf1);
 
-    while (fscanf(file2, "%u %u", &edge.x, &edge.y) > 0)
+    while (fscanf(file2, "%lu %lu", &edge.x, &edge.y) > 0)
         rem_update(&edge, 1, uf2);
 
     fclose(file1);
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     // Check if graphs are the same
     for (Node i = 0 ; i < nb_vertices1 ; i++) {
         if (repr(i, uf1) != repr(i, uf2)) {
-            printf("The two graph have separate components (%u is represented by %u in the first one and %u in the second one).\n", i, repr(i, uf1), repr(i, uf2));
+            printf("The two graph have separate components (%lu is represented by %lu in the first one and %lu in the second one).\n", i, repr(i, uf1), repr(i, uf2));
             return 1;
         }
     }

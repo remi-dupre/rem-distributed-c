@@ -68,9 +68,9 @@ int main(int argc, char** argv) {
     }
     fprintf(csv, "%s;%s;%ld\n", time_str, argv[1], timer);
 
-    printf("%u\n", nb_vertices);
+    printf("%lu\n", nb_vertices);
     for (Node i = 0 ; i < nb_vertices ; i++) {
-        printf("%u %u\n", i, uf_parent[i]);
+        printf("%lu %lu\n", i, uf_parent[i]);
     }
 
     // Close input file
