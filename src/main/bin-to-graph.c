@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     // Read entirely the file
     Node nb_vertices;
     fread(&nb_vertices, sizeof(Node), 1, input);
-    fprintf(output, "%u\n", nb_vertices);
+    fprintf(output, "%lu\n", nb_vertices);
 
     // Output the entire graph
     Edge* edges = malloc(BUFFER_SIZE);
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     size_t nb_edges;  // number of edges read from last chunk
     while ((nb_edges = fread(edges, sizeof(Edge), max_nb_edges, input)) > 1) {
         for (size_t i = 0 ; i < nb_edges ; i++) {
-            fprintf(output, "%u %u\n", edges[i].x, edges[i].y);
+            fprintf(output, "%lu %lu\n", edges[i].x, edges[i].y);
         }
     }
 

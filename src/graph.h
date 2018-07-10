@@ -14,7 +14,7 @@
 /**
  * Type used to represent a node.
  */
-typedef uint32_t Node;
+typedef uint64_t Node;
 
 /**
  * Representation of an edge as concatenation of two integers.
