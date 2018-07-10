@@ -133,8 +133,6 @@ void send_graph(FILE* file, RemContext* context)
                 assert(buffer_load[edge_owner] * sizeof(Edge) <= MAX_COM_SIZE);
 
             if (is_last_edge || (buffer_load[edge_owner] + 2) * sizeof(Edge) > MAX_COM_SIZE) {
-                assert(edge_owner == -1);
-
                 // Send buffer sizes
                 int my_size;
                 MPI_Scatter(
