@@ -80,13 +80,13 @@ void send_graph(FILE* file, RemContext* context)
         0, context->communicator
     );
 
-//    Node* f = malloc(context->nb_vertices * sizeof(Node));
-//    Node x = 0;
+    // Node* f = malloc(context->nb_vertices * sizeof(Node));
+    // Node x = 0;
 
-//    for (Node i = 0 ; i < context->nb_vertices ; i++) {
-//        f[i] = x;
-//        x = f_next(x, context);
-//    }
+    // for (Node i = 0 ; i < context->nb_vertices ; i++) {
+        // f[i] = x;
+        // x = f_next(x, context);
+    // }
 
     // Read edges from files while sending
     Edge* edges = malloc(FILE_BUFF_SIZE);
@@ -120,8 +120,8 @@ void send_graph(FILE* file, RemContext* context)
             }
             else {
                 // Insert a regular edge to buffer
-//                edges[i].x = f[edges[i].x];
-//                edges[i].y = f[edges[i].y];
+                // edges[i].x = f[edges[i].x];
+                // edges[i].y = f[edges[i].y];
 
                 assert(edges[i].x < context->nb_vertices);
                 assert(edges[i].y < context->nb_vertices);
@@ -522,6 +522,11 @@ void process_distributed(RemContext* context)
     int* to_send_displ = malloc(context_cpy.nb_process * sizeof(int));
     int* fake_sizes = malloc(context_cpy.nb_process * sizeof(int));
 
+    if (to_send == NULL) {
+        perror("Not enough memory available (to_send)").
+        exit(-1);
+    }
+
     for (int p = 0 ; p < context_cpy.nb_process ; p++) {
         to_send_sizes[p] = 0;
         to_send_displ[p] = p * MAX_LOCAL_ITER * NB_THREADS;
@@ -655,6 +660,12 @@ void process_distributed(RemContext* context)
 
         // Share tasks with other process
         Edge* recv_datas = malloc(total_size * sizeof(Edge));
+
+        if (recv_datas == NULL) {
+            perror("Not enough memory available (recv_datas)");
+            exit(-1);
+        }
+
         MPI_Alltoallv(
             to_send, to_send_sizes, to_send_displ, MPI_EDGE,
             recv_datas, recv_sizes, recv_displ, MPI_EDGE,
@@ -736,20 +747,20 @@ void debug_structure(const RemContext* context)
 
     // Display edges
     if (context->process == 0) {
-//        Node* g = malloc(context->nb_vertices * sizeof(Node));
-//        Node x = 0;
+        // Node* g = malloc(context->nb_vertices * sizeof(Node));
+        // Node x = 0;
 
-//        for (Node i = 0 ; i < context->nb_vertices ; i++) {
-//            g[x] = i;
-//            x = f_next(x, context);
-//        }
+        // for (Node i = 0 ; i < context->nb_vertices ; i++) {
+            // g[x] = i;
+            // x = f_next(x, context);
+        // }
 
         // Print number of nodes
         printf("%lu\n", context->nb_vertices);
 
         // Print edges
         for (int i = 0 ; i < total_size ; i++)
-//            printf("%lu %lu\n", g[all_edges[i].x], g[all_edges[i].y]);
+            // printf("%lu %lu\n", g[all_edges[i].x], g[all_edges[i].y]);
             printf("%lu %lu\n", all_edges[i].x, all_edges[i].y);
         //free(g);
     }
