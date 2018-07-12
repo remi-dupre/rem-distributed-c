@@ -152,6 +152,12 @@ void send_graph(FILE* file, RemContext* context)
 
                 // Send data
                 Edge* recv_buff = malloc(my_size * sizeof(Edge));
+
+                if (recv_buff == NULL) {
+                    perror("Not enough memory to receive data");
+                    exit(-1);
+                }
+
                 MPI_Scatterv(
                     buffer, buffer_load, buffer_disp, MPI_EDGE,
                     recv_buff, my_size, MPI_EDGE,
@@ -208,6 +214,12 @@ void recv_graph(RemContext* context)
     bool finished = false;
 
     Edge* buffer = malloc(MAX_COM_SIZE);
+
+    if (buffer == NULL) {
+        perror("Not enough memory to init receive buffer");
+        exit(-1);
+    }
+
     int buffer_load;
 
     while (!finished) {
