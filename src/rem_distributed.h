@@ -30,7 +30,7 @@
 #endif
 
 // Function giving the owner of a process
-#define owner(node) (((int) node) % context->nb_process)
+#define owner(node) ((int) ((node) % context->nb_process))
 
 
 // Function giving the rank of a node, defined as a recursive sequence
