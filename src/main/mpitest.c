@@ -24,6 +24,9 @@ int main(int argc, char** argv) {
     long t_end_send;
     long t_end_process;
 
+    MPI_Type_contiguous(sizeof(Node), MPI_CHAR, &MPI_NODE);
+    MPI_Type_commit(&MPI_NODE);
+
     MPI_Type_contiguous(sizeof(Edge), MPI_CHAR, &MPI_EDGE);
     MPI_Type_commit(&MPI_EDGE);
 

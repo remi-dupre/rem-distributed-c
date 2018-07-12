@@ -26,6 +26,7 @@ typedef struct Edge
 } Edge;
 
 // Mpi edge's type
+MPI_Datatype MPI_NODE;
 MPI_Datatype MPI_EDGE;
 
 /**

@@ -76,7 +76,7 @@ void send_graph(FILE* file, RemContext* context)
     // Send the number of nodes to everyone
     change_nb_vertices(context, nb_nodes);
     MPI_Bcast(
-        &context->nb_vertices, 1, MPI_INT,
+        &context->nb_vertices, 1, MPI_NODE,
         0, context->communicator
     );
 
@@ -205,7 +205,7 @@ void recv_graph(RemContext* context)
 
     // Receive graph's total number of nodes
     MPI_Bcast(
-        &context->nb_vertices, 1, MPI_INT,
+        &context->nb_vertices, 1, MPI_NODE,
         0, context->communicator
     );
     change_nb_vertices(context, context->nb_vertices);
