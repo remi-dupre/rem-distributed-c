@@ -523,7 +523,7 @@ void process_distributed(RemContext* context)
     int* fake_sizes = malloc(context_cpy.nb_process * sizeof(int));
 
     if (to_send == NULL) {
-        perror("Not enough memory available (to_send)").
+        perror("Not enough memory available (to_send)");
         exit(-1);
     }
 

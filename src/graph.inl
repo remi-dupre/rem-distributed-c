@@ -11,6 +11,11 @@ static inline void reserve(Graph* graph, size_t min_size)
 
         // create new container
         graph->edges = realloc(graph->edges, graph->container_size * sizeof(Edge));
+
+        if (graph->edges == NULL) {
+            perror("Not enough memory available (pushing graph)");
+            exit(-1);
+        }
     }
 }
 

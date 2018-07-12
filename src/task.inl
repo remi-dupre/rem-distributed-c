@@ -22,6 +22,11 @@ static inline void push_tasks(TaskHeap* heap, Edge* tasks, int nb_tasks)
             heap->container_size = 2 * heap->container_size + 1;
 
         heap->tasks = realloc(heap->tasks, heap->container_size * sizeof(Edge));
+
+        if(heap->tasks == NULL) {
+            perror("Not enough memory available (pushng task)");
+            exit(-1);
+        }
     }
 
     memcpy(heap->tasks + heap->nb_tasks, tasks, nb_tasks * sizeof(Edge));
