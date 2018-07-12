@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+"""
+Read an OSM's XML file from standart input and outputs roads nodes.
+More about OSM's XML: https://wiki.openstreetmap.org/wiki/OSM_XML.
+"""
 from sys import stdin
 
 import xml.etree.ElementTree as ET

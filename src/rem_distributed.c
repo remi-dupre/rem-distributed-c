@@ -37,11 +37,20 @@ void change_nb_vertices(RemContext* context, Node nb_vertices)
     free(context->border_graph);
     free(context->buffer_graph);
 
-    context->uf_parent = malloc(nb_vertices * sizeof(Node));
+    // allocates memory only for owned vertices
+    size_t owned_vertices = (nb_vertices + context->nb_process - context->process - 1) / context->nb_process;
+    context->uf_parent = malloc(owned_vertices * sizeof(Node));
+
+    if (context->uf_parent == NULL) {
+        perror("not enough memory");
+        exit(-1);
+    }
+
     context->border_graph = new_empty_graph(nb_vertices);
     context->buffer_graph = new_empty_graph(nb_vertices);
 
-    for (Node i = 0 ; i < nb_vertices ; i++)
+    #pragma omp parallel for num_threads(NB_THREADS)
+    for (Node i = 0 ; i < owned_vertices ; i++)
         context->uf_parent[i] = i;
 }
 
@@ -260,12 +269,18 @@ void flush_buffered_graph(RemContext* context)
         context->postfilter_size = 0;
     #endif
 
-
+    Node actual_nb_vertices = (context->nb_vertices + context->nb_process - context->process - 1) / context->nb_process;
     Graph* border_graph = context->border_graph;
-    Graph* internal_graph = new_empty_graph(context->nb_vertices);
+    Graph* internal_graph = new_empty_graph((context->nb_vertices + context->nb_process - 1) / context->nb_process);
 
-    Node* border_components = malloc(context->nb_vertices * sizeof(Node));
-    for (Node i = 0 ; i < context->nb_vertices ; i++)
+    Node* border_components = malloc(actual_nb_vertices * sizeof(Node));
+
+    if (border_components == NULL) {
+        perror("Not enough memory available (border_components)");
+        exit(-1);
+    }
+
+    for (Node i = 0 ; i < actual_nb_vertices ; i++)
         border_components[i] = i;
 
     int process = context->process;
@@ -283,7 +298,7 @@ void flush_buffered_graph(RemContext* context)
     #pragma omp parallel num_threads(NB_THREADS)
     {
         // Store localy border edges catched by this process
-        Graph local_internal_graph = *new_empty_graph(context->nb_vertices);
+        Graph local_internal_graph = *new_empty_graph(actual_nb_vertices);
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
         #ifdef TIMERS
@@ -296,26 +311,29 @@ void flush_buffered_graph(RemContext* context)
 
             if (own(edges[i].y) == process) {
                 // We own this edge, insert it via rem's algorithm
+                edges[i].x /= nb_process;
+                edges[i].y /= nb_process;
+
                 if (!rem_insert_inplace(&edges[i], uf_parent)) {
                     insert_edge(&local_internal_graph, edges[i]);
                 }
             }
-        #ifdef TIMERS
-            }
-
-            #pragma omp barrier
-            #pragma omp single
-            {
-                context->time_inserting = time_ms() - context->time_inserting;
-                context->time_filtering = time_ms();
-            }
-
-            #pragma omp for
-            for (size_t i = 0 ; i < nb_edges ; i++) {
-                if (own(edges[i].y) == process);
-        #endif
+        // #ifdef TIMERS
+        //     }
+        //
+        //     #pragma omp barrier
+        //     #pragma omp single
+        //     {
+        //         context->time_inserting = time_ms() - context->time_inserting;
+        //         context->time_filtering = time_ms();
+        //     }
+        //
+        //     #pragma omp for
+        //     for (size_t i = 0 ; i < nb_edges ; i++) {
+        //         if (own(edges[i].y) == process);
+        // #endif
             else {
-                if (!rem_insert(edges[i], border_components)) {
+                if (true) {//!rem_insert(edges[i], border_components)) {
                     #ifdef TIMERS
                         #pragma omp atomic
                         context->postfilter_size++;
@@ -392,6 +410,11 @@ void flush_buffered_graph(RemContext* context)
 
     rem_shared_update(internal_graph->edges, internal_graph->nb_edges, uf_parent, NB_THREADS, true);
 
+    for (Node i = 0 ; i < actual_nb_vertices ; i++) {
+        uf_parent[i] *= nb_process;
+        uf_parent[i] += process;
+    }
+
     delete_graph(internal_graph);
     delete_graph(context->buffer_graph);
 
@@ -399,7 +422,6 @@ void flush_buffered_graph(RemContext* context)
     free(border_components);
 
     #undef own
-
 }
 
 void filter_border(RemContext* context)
@@ -441,12 +463,13 @@ void flatten(RemContext* context)
     int nb_process = context->nb_process;
 
     Node nb_vertices = context->nb_vertices;
+    Node actual_nb_vertices = (nb_vertices + nb_process - process - 1) / nb_vertices;
     Node* uf_parent = context->uf_parent;
 
-    #define p(x) uf_parent[x]
+    #define p(x) uf_parent[x / nb_process]
     #define owning(x) ((int) ((x) % nb_process) == process)
 
-    for (Node i = 0 ; i < nb_vertices ; i++) {
+    for (Node i = 0 ; i < actual_nb_vertices ; i++) {
         if (owning(p(i)) && owning(p(p(i)))) {
             p(i) = p(p(i));
         }
@@ -459,7 +482,7 @@ void flatten(RemContext* context)
 static inline Node local_root(Node node, Node* uf_parent, int process, int nb_process)
 {
     #define own(x) ((int) (x) % nb_process)
-    #define p(x) (uf_parent[x])
+    #define p(x) (uf_parent[x / nb_process])
 
     int anc_container_size = 0;
     Node* ancesters = NULL;
@@ -511,7 +534,7 @@ void process_distributed(RemContext* context)
         bool did_nothing = is_empty_heap(todo);
 
         // Execute tasks from the queue
-        #define p(x) (context_cpy.uf_parent[(x)])
+        #define p(x) (context_cpy.uf_parent[(x) / context_cpy.nb_process])
         #define own(x) ((int) (x) % context_cpy.nb_process)
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
@@ -676,11 +699,10 @@ void debug_structure(const RemContext* context)
     for (Node i = 0 ; i < context->nb_vertices ; i++) {
         if (owner(i) == context->process) {
             edges[edge_pos].x = i;
-            edges[edge_pos].y = context->uf_parent[i];
+            edges[edge_pos].y = context->uf_parent[i / context->nb_process];
             edge_pos++;
         }
     }
-    assert(edge_pos == my_size);
 
     // Collect size from all process
     int* sizes = malloc(context->nb_process * sizeof(int));

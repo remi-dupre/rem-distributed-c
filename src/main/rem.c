@@ -26,6 +26,11 @@ int main(int argc, char** argv) {
 
     Node* uf_parent = malloc(nb_vertices * sizeof(Node));
 
+    if (uf_parent == NULL) {
+        perror("Not enough memory available");
+        exit(-1);
+    }
+
     for (Node i = 0 ; i < nb_vertices ; i++)
         uf_parent[i] = i;
 

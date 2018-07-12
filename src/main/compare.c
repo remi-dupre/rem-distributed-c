@@ -44,6 +44,11 @@ int main(int argc, char** argv) {
     Node* uf1 = malloc(nb_vertices1 * sizeof(Node));
     Node* uf2 = malloc(nb_vertices2 * sizeof(Node));
 
+    if (uf1 == NULL || uf2 == NULL) {
+        perror("Not enough memory available");
+        exit(-1);
+    }
+
     for (Node i = 0 ; i < nb_vertices1 ; i++)
         uf1[i] = uf2[i] = i;
 

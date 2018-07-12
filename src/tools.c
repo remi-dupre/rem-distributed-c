@@ -9,7 +9,7 @@ long time_ms()
 
     clock_gettime(CLOCK_REALTIME, &spec);
     s  = spec.tv_sec;
-    ms = spec.tv_nsec / 1.0e6;
+    ms = spec.tv_nsec / 1000000;
 
     return ms + (s * 1000);
 }
