@@ -271,6 +271,7 @@ void recv_graph(RemContext* context)
 
     }
 
+    shrink(context->buffer_graph, context->buffer_graph->nb_edges);
     free(buffer);
 }
 
@@ -436,6 +437,7 @@ void flush_buffered_graph(RemContext* context)
     delete_graph(internal_graph);
     delete_graph(context->buffer_graph);
 
+    shrink(context->border_graph, context->border_graph->nb_edges);
     context->buffer_graph = new_empty_graph(context->nb_vertices);
     free(border_components);
 
@@ -533,6 +535,7 @@ void process_distributed(RemContext* context)
     // Enqueue all initial edges as tasks to process
     TaskHeap todo = empty_task_heap();
     push_tasks(&todo, context_cpy.border_graph->edges, context_cpy.border_graph->nb_edges);
+    delete_graph(context_cpy.border_graph);
 
     // Create buffers of tasks to send to other process
     Edge* to_send = malloc(context_cpy.nb_process * MAX_LOCAL_ITER * NB_THREADS * sizeof(Edge));
