@@ -195,6 +195,8 @@ void send_graph(FILE* file, RemContext* context)
 
     //free(f);
     free(buffer_load);
+    free(buffer_disp);
+    free(edges_received);
     free(buffer);
     free(edges);
 }
@@ -310,7 +312,10 @@ void flush_buffered_graph(RemContext* context)
     #pragma omp parallel num_threads(NB_THREADS)
     {
         // Store localy border edges catched by this process
-        Graph local_internal_graph = *new_empty_graph(actual_nb_vertices);
+        Graph* local_internal_graph_ptr = new_empty_graph(actual_nb_vertices);
+        Graph local_internal_graph = *local_internal_graph_ptr;
+        free(local_internal_graph_ptr);
+
         Graph* local_border_graph = new_empty_graph(context->nb_vertices);
 
         #ifdef TIMERS
@@ -413,6 +418,7 @@ void flush_buffered_graph(RemContext* context)
         );
 
         delete_graph(local_border_graph);
+        free(local_internal_graph.edges);
         // delete_graph(&local_internal_graph);
     }
 
@@ -578,10 +584,10 @@ void process_distributed(RemContext* context)
             }
 
             assert(begin <= end);
-            Graph loc_to_send[context_cpy.nb_process];
+            Graph* loc_to_send[context_cpy.nb_process];
 
             for (int i = 0 ; i < context_cpy.nb_process ; i++)
-                loc_to_send[i] = *new_empty_graph(context_cpy.nb_vertices);
+                loc_to_send[i] = new_empty_graph(context_cpy.nb_vertices);
 
             // Handle tasks
             for (size_t i = begin ; i < end ; i++) {
@@ -592,7 +598,7 @@ void process_distributed(RemContext* context)
 
                 if (p(r.x) < r.y) {
                     Edge inserted = {.x = r.y, .y = p(r.x)};
-                    insert_edge(&loc_to_send[own(inserted.x)], inserted);
+                    insert_edge(loc_to_send[own(inserted.x)], inserted);
                 }
                 else if (p(r.x) > r.y) {
                     if (p(r.x) == r.x) {
@@ -600,7 +606,7 @@ void process_distributed(RemContext* context)
                     }
                     else {
                         Edge inserted = {.x = p(r.x), .y = r.y};
-                        insert_edge(&loc_to_send[own(inserted.x)], inserted);
+                        insert_edge(loc_to_send[own(inserted.x)], inserted);
                         p(r.x) = r.y;
                     }
                 }
@@ -614,17 +620,17 @@ void process_distributed(RemContext* context)
                 for (int p = 0 ; p < context_cpy.nb_process ; p++) {
                     assert(to_send_sizes[p] < MAX_LOCAL_ITER * NB_THREADS);
                     insert_pos[p] = to_send_displ[p] + to_send_sizes[p];
-                    to_send_sizes[p] += loc_to_send[p].nb_edges;
+                    to_send_sizes[p] += loc_to_send[p]->nb_edges;
                 }
             }
 
             for (int p = 0 ;  p < context_cpy.nb_process ; p++) {
                 memcpy(
                     to_send + insert_pos[p],
-                    loc_to_send[p].edges,
-                    loc_to_send[p].nb_edges * sizeof(Edge)
+                    loc_to_send[p]->edges,
+                    loc_to_send[p]->nb_edges * sizeof(Edge)
                 );
-                free(loc_to_send[p].edges);
+                delete_graph(loc_to_send[p]);
             }
         }
 
