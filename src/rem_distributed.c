@@ -259,6 +259,8 @@ void recv_graph(RemContext* context)
             assert(buffer[i].y < context->nb_vertices);
 
             if (owner(buffer[i].x) != context->process) {
+                assert(buffer[i].y == context->process);
+
                 const Node z = buffer[i].x;
                 buffer[i].x = buffer[i].y;
                 buffer[i].y = z;
