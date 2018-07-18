@@ -259,7 +259,7 @@ void recv_graph(RemContext* context)
             assert(buffer[i].y < context->nb_vertices);
 
             if (owner(buffer[i].x) != context->process) {
-                assert(buffer[i].y == context->process);
+                assert(owner(buffer[i].y) == context->process);
 
                 const Node z = buffer[i].x;
                 buffer[i].x = buffer[i].y;
@@ -310,7 +310,7 @@ void flush_buffered_graph(RemContext* context)
     // Prepare border_graph to catch filtered edges
     border_graph->nb_edges = 0;
 
-    #define own(x) ((int) (x) % nb_process)
+    #define own(node) ((int) ((node) % nb_process))
 
     #pragma omp parallel num_threads(NB_THREADS)
     {
@@ -503,7 +503,7 @@ void flatten(RemContext* context)
 
 static inline Node local_root(Node node, Node* uf_parent, int process, int nb_process)
 {
-    #define own(x) ((int) (x) % nb_process)
+    #define own(node) ((int) ((node) % nb_process))
     #define p(x) (uf_parent[x / nb_process])
 
     int anc_container_size = 0;
@@ -563,7 +563,7 @@ void process_distributed(RemContext* context)
 
         // Execute tasks from the queue
         #define p(x) (context_cpy.uf_parent[(x) / context_cpy.nb_process])
-        #define own(x) ((int) (x) % context_cpy.nb_process)
+        #define own(node) ((int) ((node) % context_cpy.nb_process))
         #define lroot(x) (local_root(x, context_cpy.uf_parent, context_cpy.process, context_cpy.nb_process))
 
         #ifdef TIMERS
