@@ -115,7 +115,7 @@
         \todo[noline,color=green!30,inline]{Add a reference to \emph{Dijkstra, E.W.: A Discipline of Programming} ?}
 
         \setlength\intextsep{0pt}
-        \begin{wrapfigure}{r}{5cm}
+        \begin{wrapfigure}[17]{r}{5cm}
           \centering
           \begin{minipage}{\linewidth}
             \begin{algorithm}[H]
@@ -157,9 +157,22 @@
 
     \subsection{Distributed algorithms}
       % Introduction to distributed algorithmic, existing implementation
+      Almost no work seems to previously focus on the issue of distributing the union-find algorithm.
+      This may be due to the fact that this algorithm is close to optimal, as much for its speed as for its memory complexity.
+      It is possible however that because of the size of the input graph, the nodes don't fit in memory, \citeA{ufdist09} mentioned that an application to Hessian matrices can reach this limit.
+
+      \citeA{ufdist09} introduced an parallization of the algorithm, based on an approach close to REM: the same kind of zigzag merge operation is done by comparing the rank of $r_x$ and $r_y$, where the rank is the depth of a node in its component's tree.
+      This process is extended to a distributed implementation by attributing for each vertex an unique process. Then, a disjoint-set structure will be stored among processes, for any node $x$, only the owner of $x$ knows the value of $p(x)$.
+      Something close to the sequential algorithm can then be executed by sending messages between processes whenever the current process can't run anymore the algorithm because it doesn't own $r_x$ or $r_y$ depending on their ranks.
+
+      This algorithm had an issue of clarity as several specific cases had to be handled with a patch. However results showed that it was nicely scalable and where encouraging some refinement.
 
     \subsection{Shared algorithms}
       % Introduction to shared algorithmic, existing implementation
+      \todo[color=blue!30,fancyline]{Reference}
+      [...] showed that REM was a very convenient algorithm to adapted for parallelized computing. As it only modifies one side of the edge during each step of the merge operation, it can very easily be implemented for several cores using locks.
+      \todo[color=green!30,fancyline]{Add this algorithm somewhere}
+      But as locks are slow, the paper also introduce a lock-free approach that is much quicker. This approch processes by inserting edge in the structure in a first step that doesn't try to fix concurency issues. Then, the algorithm checks that each edge that added informations to the structure is still inside a component of the structure, the algorithm restarts with the set of theses node that were not connected as input and halts when this set is empty.
 
 
   \section{Writing REM as a distributed memory algorithm}
