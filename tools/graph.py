@@ -7,6 +7,8 @@ import csv
 import matplotlib.pyplot as plt
 import os
 
+from numpy import mean
+
 
 # File to load
 FILE_NAME = 'mpitest.csv'
@@ -156,18 +158,32 @@ for infile in datas:
     name = infile.split('/')[-1].split('.')[0]
 
     # Select axis datas
+    print(infile)
     file_datas = datas[infile]
-    x_values = [
-        file_datas[x_axis][i]
-        for i in range(len(file_datas[x_axis]))
-        if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
-    ]
-    y_values = [[
+
+    xy_values = [
+        (file_datas[x_axis][i], [
             file_datas[curve][i]
-            for i in range(len(file_datas[curve]))
+            for curve in y_axis
             if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
-        ] for curve in y_axis
+        ]) for i in range(len(file_datas[y_axis[0]]))
     ]
+    x_values = sorted(list(set([x for (x, y) in xy_values])))
+    y_values = [[] for i in range(len(y_axis))]
+    y_pre_values = [[y for (x, y) in xy_values if x == x_values[i]] for i in range(len(x_values))]
+
+
+    for Y in y_pre_values:
+        dim = len(y_axis)
+        val = [[] for i in range(dim)]
+
+        for y in Y:
+            for i in range(dim):
+                if y:
+                    val[i].append(y[i])
+
+        for i in range(dim):
+            y_values[i].append(mean(val[i]))
 
     figure = plt.figure(infile)
     plt.title('REM : ' + name.title())
