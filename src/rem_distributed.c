@@ -446,57 +446,105 @@ void flush_buffered_graph(RemContext* context)
     #undef own
 }
 
+// Comparison function for edges but with void* parameters
+int sort_comp_edges(const void* a, const void* b)
+{
+    const Edge* x = a;
+    const Edge* y = b;
+
+    return comp_edges(x, y);
+}
+
 void filter_border(RemContext* context)
 {
     #ifdef TIMERS
         context->time_filtering = time_ms();
+        context->prefilter_size = context->border_graph->nb_edges;
     #endif
 
-    size_t nb_edges = context->border_graph->nb_edges;
+    // Empty graph would be an issue for last step
+    if (context->border_graph->nb_edges == 0)
+        return;
+
+    // Copy usefull informations from context
+    const int process = context->process;
+    const int nb_process = context->nb_process;
+
+    const size_t nb_edges = context->border_graph->nb_edges;
     Edge* edges = context->border_graph->edges;
 
-    // Copy disjoint set structure in order not to alter it
-    Node* uf_copy = malloc(context->nb_vertices * sizeof(Node));
-    memcpy(uf_copy, context->uf_parent, context->nb_vertices * sizeof(Node));
+    const Node* uf_parent = context->uf_parent;
 
-    // Create a new graph in which we will push edges to keep
-    Graph* new_border = new_empty_graph(context->nb_vertices);
+    // Usefull access macros
+    #define own(x) ((int) ((x) % nb_process))
+    #define p(x) uf_parent[(x) / nb_process]
 
-    for (size_t i = 0 ; i < nb_edges ; i++)
-        if (!rem_insert(edges[i], uf_copy))
-            insert_edge(new_border, edges[i]);
+    // Flatten the structure for an efficient representant search with no
+    //  function call.
+    flatten(context);
+
+    // On each node of the border, replace the owned node with its representant.
+    #pragma omp parallel for num_threads(NB_THREADS)
+    for (size_t i = 0 ; i < nb_edges ; i++) {
+        assert(own(edges[i].x) == process);
+        assert(own(edges[i].y) != process);
+
+        edges[i].x = p(edges[i].x);
+    }
+    // Sorts the list of edges lexicographicaly
+    qsort(edges, nb_edges, sizeof(Edge), &comp_edges);
+
+    // Remove redundancies for the sorted array
+    size_t last_edge_kept = 0;
+
+    for (size_t i = 1 ; i < nb_edges ; i++) {
+        if (comp_edges(&edges[i], &edges[last_edge_kept]) != 0) {
+            last_edge_kept++;
+            edges[last_edge_kept] = edges[i];
+        }
+    }
+
+    // Update the actual size of the border
+    context->border_graph->nb_edges = last_edge_kept + 1;
+    shrink(context->border_graph, context->border_graph->nb_edges);
 
     #ifdef TIMERS
-        context->prefilter_size = context->border_graph->nb_edges;
-        context->postfilter_size = new_border->nb_edges;
-    #endif
-
-    delete_graph(context->border_graph);
-    context->border_graph = new_border;
-
-    #ifdef TIMERS
+        context->postfilter_size = context->border_graph->nb_edges;
         context->time_filtering = time_ms() - context->time_filtering;
     #endif
+
+    // Exit clean
+    #undef own
+    #undef p
 }
 
 void flatten(RemContext* context)
 {
-    int process = context->process;
-    int nb_process = context->nb_process;
+    // Copy usefull datas from context
+    const int process = context->process;
+    const int nb_process = context->nb_process;
 
-    Node nb_vertices = context->nb_vertices;
-    Node actual_nb_vertices = (nb_vertices + nb_process - process - 1) / nb_vertices;
+    const Node nb_vertices = context->nb_vertices;
+    const Node actual_nb_vertices = (nb_vertices + nb_process - process - 1) / nb_vertices;
     Node* uf_parent = context->uf_parent;
 
-    #define p(x) uf_parent[x / nb_process]
+    // Use full access macros
+    #define p(x) uf_parent[(x) / nb_process]
     #define owning(x) ((int) ((x) % nb_process) == process)
 
+    // From each vertex walk until the local root is reached and compress.
+    // As the structure is decreasing, on one thread it exits after at most one
+    //  step.
+    #pragma omp parallel for num_threads(NB_THREADS)
     for (Node i = 0 ; i < actual_nb_vertices ; i++) {
-        if (owning(p(i)) && owning(p(p(i)))) {
-            p(i) = p(p(i));
+        Node p_i = p(i);
+
+        while (owning(p_i) && p_i != p(p_i)) {
+            p_i = p(i) = p(p_i);
         }
     }
 
+    // Exit clean
     #undef owning
     #undef p
 }

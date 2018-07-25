@@ -1,3 +1,4 @@
+/*
 #include "quicksort.h"
 
 
@@ -126,3 +127,4 @@ void parallel_qsort(
     // Exit clean
     free(pivots);
 }
+*/

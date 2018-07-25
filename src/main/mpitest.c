@@ -57,15 +57,23 @@ int main(int argc, char** argv) {
     t_end_send = time_ms();
 
     flush_buffered_graph(context);
-    // filter_border(context);  // now handled inside flush
-    // flatten(context);
+
+    // Filter edges localy
+    size_t diff_nb_edges = context->border_graph->nb_edges;
+    filter_border(context);
+    diff_nb_edges -= context->border_graph->nb_edges;
+
+    FILE* filter_debug = fopen("filter.log", "a");
+    fprintf(filter_debug, "(%s) %d: removed %lu edges\n", argv[argc-1], process, diff_nb_edges);
+    fclose(filter_debug);
 
     t_end_local = time_ms();
 
+    // Process with communcations
     process_distributed(context);
-
     t_end_process = time_ms();
 
+    // Dosplay results
     debug_structure(context);
 
     // Close input file

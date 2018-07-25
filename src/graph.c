@@ -1,6 +1,17 @@
 #include "graph.h"
 
 
+int comp_edges(const Edge* a, const Edge* b)
+{
+    if (a->x < b->x)
+        return -1;
+    else if (a->x > b->x)
+        return 1;
+    else
+        // returns -1 <=> a->y < b->y and 1 <=> a->y > b->y
+        return (a->y < b->y) ? -1 : (a->y > b->y);
+}
+
 Graph* new_empty_graph(Node nb_vertices)
 {
     Graph* graph = malloc(sizeof(Graph));

@@ -94,7 +94,8 @@ void recv_graph(RemContext* context);
 void flush_buffered_graph(RemContext* context);
 
 /**
- * Remove some edges from the border graph in order to only keep a local covering tree.
+ * Remove some edges from the border graph in order to only keep a local
+ *  spanning forest. This involves no communication step.
  */
 void filter_border(RemContext* context);
 

@@ -43,6 +43,13 @@ typedef struct Graph
 } Graph;
 
 /**
+ * Compare two edges according to lexicographical order.
+ *      comp(&a, &b) < 0  <=>  a < b
+ *      comp(&a, &b) > 0  <=>  a > b
+ */
+int comp_edges(const Edge *a, const Edge* b);
+
+/**
  * Create a new graph containing no edge.
  */
 Graph* new_empty_graph(Node nb_vertices);
