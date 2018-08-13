@@ -10,6 +10,9 @@
 \usepackage[hidelinks]{hyperref}
 
 \usepackage{algorithm}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{apacite}
 \usepackage{stmaryrd}
 \usepackage{tikz}
@@ -17,7 +20,20 @@
 \usepackage{wrapfig}
 
 
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
+
+\title{Internship report}
+\author{Rémi Dupré}
+
+
 \begin{document}
+  \maketitle
+
+  \tableofcontents
+  \pagebreak
+
   \section{Introduction }
     % Some bullshit is expected here I guess ?
     % Goal of the internship (maybe quickly as not everything is supposed to be introduced)
@@ -103,7 +119,8 @@
           \end{minipage}
         \end{wrapfigure}
 
-        A very typical application of this structure is to find a spaning forest for an undirected graph. A general algorithm used to answer this problem is called \emph{union-find} (alg.~\ref{alg:union-find}).
+        A very typical application of this structure is to find a spaning forest for an undirected graph. 
+        A general algorithm used to answer this problem is called \emph{union-find} (alg.~\ref{alg:union-find}).
 
         Typically, \textsc{find} runs over the tree until it reaches the root, keeps track of every nodes on the path and finally set their parent to be the root. In this case \textsc{union} doesn't need to compress the trees and will just make one of the roots be parent of the other, the new root can be chosen arbitrary or given a criteria (index, rank \dots).
 
@@ -174,7 +191,7 @@
 
     \subsection{Shared algorithms}
       % Introduction to shared algorithmic, existing implementation
-      \citeA{ufshar12} showed that REM was a very convenient algorithm to adapted for parallelized computing. As it only modifies one side of the edge during each step of the merge operation, it can very easily be implemented for several cores using locks.
+      \citeA{ufshar12} showed that REM was a very convenient algorithm to adapt for parallelized computing. As it only modifies one side of the edge during each step of the merge operation, it can very easily be implemented for several cores using locks.
       \todo[color=green!30,fancyline]{Add this algorithm somewhere}
       But as locks are slow, the paper also introduce a lock-free approach that is much quicker. This approch processes by inserting edge in the structure in a first step that doesn't try to fix concurency issues. Then, the algorithm checks that each edge that added informations to the structure is still inside a component of the structure, the algorithm restarts with the set of theses node that were not connected as input and halts when this set is empty.
 
@@ -200,7 +217,7 @@
                 \Else
                   \State $p_{r_x} \gets p(r_x)$
                   \State $p(r_x) \gets r_y$
-                  \State send $(p_{r_x}, r_y)$ to $owner(z)$
+                  \State send $(p_{r_x}, r_y)$ to $owner(p_{r_x})$
                 \EndIf
               \EndIf
             \EndFunction
@@ -209,14 +226,25 @@
       \end{minipage}
     \end{wrapfigure}
 
-    I started my internship by writing a distributed algorithm based on the REM algorithm. After only a few versions, it appeared that it was possible to write an algorithm very close to the sequential one: executing the same conditions, where half of the decisions are to request another process.
+    \subsection{Core idea}
+      I started my internship by writing a distributed algorithm based on the REM algorithm. After only a few versions, it appeared that it was possible to write an algorithm very close to the sequential one: executing the same conditions, where half of the decisions are to request another process.
 
-    Each node keeps a set of pairs $(r_x, r_y)$, as in the sequential algorithm, this means that $r_x$ and $r_y$ have to be in the same component of resulting tree.
-    This algorithm operate using a supersteps scheme: it will sequentially handle a chunk of edges on each processing node, then will synchronise every node and exchange datas between them and start again.
+      Each node keeps a set of pairs $(r_x, r_y)$, as in the sequential algorithm, this means that $r_x$ and $r_y$ have to be in the same component of resulting tree.
+      This algorithm operate using a supersteps scheme: it will sequentially handle a chunk of edges on each processing node, then will synchronise every node and exchange datas between them and start again.
 
-    Algorithm~\ref{alg:rem_distributed} describes how a node can handle a pair $(r_x, r_y)$.
-    It runs on a node that received $(r_x, r_y)$ and expects that the sender made sure that the current node owns $r_x$. Then the algorithm runs on its knowledge of the tree by processing the ``local root'' of $r_x$ (ie.\ the highest parent of $r_x$ in the disjoint set structure maintained by this process).
-    From there, the algorithm can either conclude that this edge is already inside a component of the disjoint-set structure or send a new edge to process to another node.
+      Algorithm~\ref{alg:rem_distributed} describes how a node can handle a pair $(r_x, r_y)$.
+      It runs on a node that received $(r_x, r_y)$ and expects that the sender made sure that the current node owns $r_x$. Then the algorithm runs on its knowledge of the tree by processing the ``local root'' of $r_x$ (ie.\ the highest parent of $r_x$ in the disjoint set structure maintained by this process).
+      From there, the algorithm can either conclude that this edge is already inside a component of the disjoint-set structure or send a new edge to process to another node.
+
+    \subsection{Avoiding unecessary communications}
+      As communication between process are very slow compared to the processor's computation, the most communications can be avoided the better it usually is. Thus, if a node has the ability to eliminate an edge, it should be done as soon as possible.
+
+      Before any communication a process will isolate every edges $(x, y)$ it received such that it owns both $x$ and $y$. Then, it will localy process the spaning forest (algo.~\ref{alg:rem}) of these edges, which doesn't require any communication.
+      Thus, the only remaining edges are edges that connect nodes owned by two different process.
+
+      Some of the edges linking two process can also be localy filtered.
+      Given two edges $(x_1, y)$ and $(x_2, y)$, assuming that the process owns $x_1$ and $x_2$, if it already knows that $x_1$ and $x_2$ are in the same component, only one of them is required.
+      After processing local initial components and before any communication, on every edge $(x, y)$ where $x$ is owned by the process, $x$ can be replaced by its local root. Finally, duplicates can be eliminated.
 
 
   \section{Mixing up distributed and shared algorithms}
@@ -228,6 +256,86 @@
 
   \section{Appendices}
     % Proofs, maybe extra datas
+
+    \subsection{Correctness and halt of distributed algorithm}
+      As I didn't find a proof for the sequencial algorithm, this proof also stands as my proof of this algorithm, this is the kind of reasoning that helped me understanding it at the begining of my internship.
+      This proof is quite straightforward but it heavily rely on the introduction of a lot of notations.
+
+
+      \subsubsection{Notations}
+        In order to make the proof clearer, some of the structures will be simplified. The state of the algorithm can be sumed up with following structures:
+
+        \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm however, only the process owning $x$ knows the value of $p(x)$.
+
+        \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle. Such a pair can be an edge of the original graph, or a task sent by another process. As the proof will not need to order how the tasks are handled, it is enough to only consider the union all tasks received by all process.
+
+        \paragraph{union\_graph} is the graph of all edges that the algorithm still has in memory. $union\_graph = dset \cup tasks$.
+
+        \paragraph{equivalence} a relation $\sim$ is defined as $G_1$ $\sim$ $G_2$ $\Leftrightarrow$ $G_1$ and $G_2$ have the same components. \\
+
+        A step of the algorithm consists in poping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying
+        algorithm~\ref{alg:rem_distributed} the states in $dset$ and $tasks$ is modified.
+        Given a run, we will denotate the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$ (cf.\ algorithm~\ref{alg:construct_dset_tasks}).
+
+        \begin{algorithm}
+          \caption{Construction of $dset_{t+1}$ and $tasks_{t+1}$}%
+          \label{alg:construct_dset_tasks}
+          \begin{algorithmic}[1]
+            \State $dset_{t+1} = dset_t$
+            \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ for a $(r_x, r_y) \in tasks_t$
+            \State Apply algorithm~\ref{alg:rem_distributed} on $owner(r_x)$.
+          \end{algorithmic}
+        \end{algorithm}
+
+        The algorithm is initialised with state $dset_0 = \{(i, i)~/~i \in V\}$ and $tasks = G$.
+
+      \subsubsection{Proof}
+        \begin{lemma}%
+          \label{lemma:transitivity}
+          At any step $t$ of algorithm~\ref{alg:rem_distributed}, $union\_graph_t \sim union\_graph_{t+1}$.
+        \end{lemma}
+
+        \begin{proof}
+          At any step $t$, the algorithm pops an edge $(r_x, r_y) \in tasks_t$. We need to check that $r_x$ and $r_y$ are still in the same component of $union\_graph_{t+1}$ and that no other component is merged.
+          \begin{itemize}
+            \item If $p_t(r_x) = r_y$, algorithm~\ref{alg:rem_distributed} doesn't change $dset_{t+1}$ or $tasks_{t+1}$. \\
+              Then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
+
+            \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks_{t+1}$. \\
+              Thus on any path containing $(r_x, r_y) \in tasks_t$, the edge $(r_x, r_y)$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$. No separate component are merged as $p_t(r_x)$ and $r_x$ were in the same component.
+
+            \item If $p_t(r_x) > r_y$:
+            \begin{itemize}
+              \item If $p_t(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$. \\
+                Then $union\_graph_t = union\_graph_{t+1}$ as $tasks_t \setminus tasks_{t+1} = {(r_x, r_y)}$.
+              \item If $p_t(r_x) \neq r_x$, $(r_x, r_y)$ replaces $(r_x, p_t(r_x))$ in $dset_{t+1}$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. \\
+                All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Moreover, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
+            \end{itemize}
+          \end{itemize}
+        \end{proof}
+
+        \begin{lemma}%
+          \label{lemma:halt}
+          Runing algorithm~\ref{alg:construct_dset_tasks} until there is no task left in $tasks_t$ will halt.
+        \end{lemma}
+
+        \begin{proof}
+          Let's assume that initially, $\forall (r_x, r_y) \in tasks, r_x > r_y$. Notice that new tasks created by
+          algorithm~\ref{alg:rem_distributed} will always fit to this criteria. \\
+          When a task $(r_x, r_y)$ is removed from $tasks$, either no new task is pushed to it, either a new task is pushed where this task is lower than the one removed in the meaning of total order $<_{lexrev}$ where $\forall (x_1, y_1), (x_2, y_2) \in V^2$:
+          \[ (x_1, y_1) <_{lexrev} (x_2, y_2) \Longleftrightarrow y_1 < y_2 \vee (y_1 = y_2 \wedge x_1 < x_2). \]
+        \end{proof}
+
+        \begin{theorem}[Correctness]
+          Runing algorithm~\ref{alg:rem_distributed} until there is no more tasks will result in dset beiing a spaning forest of the initial graph.
+        \end{theorem}
+
+        \begin{proof}
+          Lemma~\ref{lemma:halt} ensures that there is $t \in \mathbb{N}$ such that $tasks_t = \emptyset$. Finally, using Lemma~\ref{lemma:transitivity} we have:
+            \[ G \sim tasks_0 = union\_graph_0 \sim union\_graph_1 \sim \hdots \sim union\_graph_t = dset_t. \]
+        \end{proof}
+
+
     \citeA{ufdist09}
     \citeA{ufexp10}
 
