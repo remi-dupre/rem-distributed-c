@@ -30,11 +30,12 @@
 
 \begin{document}
   \maketitle
+  \pagebreak
 
   \tableofcontents
   \pagebreak
 
-  \section{Introduction }
+  \section{Introduction}
     % Some bullshit is expected here I guess ?
     % Goal of the internship (maybe quickly as not everything is supposed to be introduced)
     % Technical informations about the internship, team, ...
@@ -132,7 +133,7 @@
         \todo[noline,color=green!30,inline]{Add a reference to \emph{Dijkstra, E.W.: A Discipline of Programming}?}
 
         \setlength\intextsep{0pt}
-        \begin{wrapfigure}[17]{r}{5cm}
+        \begin{wrapfigure}{r}{5cm}
           \centering
           \begin{minipage}{\linewidth}
             \begin{algorithm}[H]
@@ -165,11 +166,16 @@
           \end{minipage}
         \end{wrapfigure}
 
-        A familly of variation, called \emph{interleaved algorithms} in \citeA{ufexp10} replaces the two separate find operations at line 5 of Union-Find (alg.~\ref{alg:union-find}). This kind of algorithm will instead operate by running over the forest simultaneously from the two starting nodes. The first advantage of this kind of algorithm is that it won't need to reach both roots on every case.
-
+      A familly of variation, called \emph{interleaved algorithms} in \citeA{ufexp10} replaces the two separate find operations at line 5 of Union-Find (alg.~\ref{alg:union-find}). This kind of algorithm will instead operate by running over the forest simultaneously from the two starting nodes. The first advantage of this kind of algorithm is that it won't need to reach both roots on every case.
       In Rem's algorithm, line 5 and 6 of algorithm~\ref{alg:union-find} are replaced by algorithm~\ref{alg:rem} which handles find operations, merging components if they are disconnected and compression in one loop.
 
-      A union-find algorithm can typically be implemented to fit a worst case complexity of $O(n + m \cdot \alpha(m, n))$ where $\alpha$ is the inverse of Ackermann's function, $n = |V|$ and $m = |E|$. Rem's algorithm however, has a worst case complexity in $O(n + m^2)$.
+      During all of the execution of the algorithm, we assume that the disjoint set structures always have any parent lower than its children (a sequence of nodes from a root to a leaf would be increasing).
+      This hypothesis allows REM algorithm to process a run on each side of a node, and pausing the one that got the lowest index, that way if two nodes have a common ancester, the algorithm will reach a state where both runs just reached it and can conclude that these two nides where previously in the same component.
+
+      As searching and merging operation are done as a single operation, there is no problem with merging any subtree of the algorithm while it runs. This algorithm will take benefits of that, at each step it will make sure that given the two current nodes $r_x$ and $r_y$ of both runs, they will both have the lowest parent of the two (for example if $p(r_x) > p(r_y)$, then the new parent of $r_x$ will be $p(r_y)$).
+
+      A union-find algorithm can typically be implemented to fit a worst case complexity of $O(n + m \cdot \alpha(m, n))$ where $\alpha$ is the inverse of Ackermann's function, $n = |V|$ and $m = |E|$. Rem's algorithm however, has a worst case complexity in $O(n + m^2)$. 
+      Nevertheless, this algorithm shows better performances on practice, I didn't try to proove it but it should have an average complexity that fits to the previous $O(n + m \cdot \alpha(m, n))$.
       \todo[color=blue!30,fancyline]{Reference or proof}
 
     \subsection{Distributed algorithms}
@@ -178,12 +184,37 @@
       This may be due to the fact that this algorithm is close to optimal, as much for its speed as for its memory complexity.
       It is possible however that because of the size of the input graph, the nodes don't fit in memory, \citeA{ufdist09} mentioned that an application to Hessian matrices can reach this limit.
 
+      \subsubsection{Distributed algorithms}
+        A distributed algorithm is a parallel algorithm that doesn't use any shared memory. It means that it can run on a set of interconnected processors which don't need any shared hardware.
+
+        In our specific case we will only focus on the specific case where the algorithm can fit to the Bulk model where it runs on the following scheme:
+          \begin{enumerate}
+            \item Communicate with other processors to get new datas.
+            \item Process localy, without any communication.
+            \item Wait for other processes to finish their work. This step is called a barrier.
+            \item Return to the communication step (1).
+          \end{enumerate}
+        Theses steps are called \emph{super steps}, and while describing such an algorithm we want to describe what are the local computations during step (2) and which data will be exchanged between each pair of process during the communication step.
+
+        While following this scheme it is not hard to express a theorical asymptotic time complexity in of form like
+          \[ T = W + H.g + S.l \]
+        where $T$, $W$, $H$ and $S$ are functions of the input parameters:
+          \begin{itemize}
+            \item $T$ is the running time of the algorithm.
+            \item $W$ is the total time spent processing local steps. This is obtained by summing up the time spent by the slowest process at each super step.
+            \item $H$ is the number of messages sent (assuming they are of equal size).
+            \item $S$ is the number of barrier steps.
+          \end{itemize}
+        Finaly, $g$ and $l$ are constants representing the time spent to deliver a message and to execute a barrier step. These two constants are widely depending on the network setup used to executed the algorithm and on the speed of the processor.
+
+        Notice that even though this complexity is as simple at it can be (we could split $H.g$ to take the bandwith and the latency into account), it is already realy hard to evaluate each hardware-dependant constants. Thus, the testing phase takes an important place in the conception of a distributed algorithm.
+
       \subsubsection{Idea}
         \citeA{ufdist09} introduced an parallization of the algorithm, based on an approach close to REM\@.
         The same kind of zigzag merge operation is done by comparing the rank of $r_x$ and $r_y$, where the rank is the depth of a node in its component's tree.
         This process is extended to a distributed implementation by attributing for each vertex an unique process. Then, a disjoint-set structure will be stored among processes, for any node $x$, only the owner of $x$ knows the value of $p(x)$.
         Something close to the sequential algorithm can then be executed by sending messages between processes whenever the current process can't run anymore the algorithm because it doesn't own $r_x$ or $r_y$ depending on their ranks.
-      This algorithm had an issue of clarity as several specific cases had to be handled with a patch. However results showed that it was nicely scalable and where encouraging some refinement.
+        This algorithm had an issue of clarity as many specific cases had to be handled with a patch. However results showed that it was nicely scalable and where encouraging some refinement.
 
       \subsubsection{Repartition}
         As the operations likely to be the most time-expensive, the main goal is to reduce communication charge.
