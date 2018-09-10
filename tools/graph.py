@@ -165,12 +165,16 @@ for infile in datas:
         (file_datas[x_axis][i], [
             file_datas[curve][i]
             for curve in y_axis
-            if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
-        ]) for i in range(len(file_datas[y_axis[0]]))
+
+        ])
+        for i in range(len(file_datas[y_axis[0]]))
+        if eval(filter, {c: file_datas[c][i] for c in file_datas.keys()})
     ]
+    print(xy_values)
     x_values = sorted(list(set([x for (x, y) in xy_values])))
     y_values = [[] for i in range(len(y_axis))]
     y_pre_values = [[y for (x, y) in xy_values if x == x_values[i]] for i in range(len(x_values))]
+    print(y_pre_values)
 
 
     for Y in y_pre_values:
@@ -185,10 +189,14 @@ for infile in datas:
         for i in range(dim):
             y_values[i].append(mean(val[i]))
 
+
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif', size=12)
+
     figure = plt.figure(infile)
-    plt.title('REM : ' + name.title())
+    # plt.title('input: ' + name.title().replace('_', '\\_'))
     plt.xlabel(plot_setup[x_axis]['label'])
-    plt.ylabel('Time spent (ms)')
+    plt.ylabel('time spent (ms)')
 
     for curve in range(len(y_values)):
         setup = plot_setup[y_axis[curve]]
@@ -200,7 +208,7 @@ for infile in datas:
     # plt.plot(datas[infile]['np'], [datas[infile]['cst']] * len(datas[infile]['np']), 'k-', label='classical algorithm')
     # plt.plot(datas[infile]['np'], [datas[infile]['shr']] * len(datas[infile]['np']), 'r-', label='shared memory\'s algorithm (24 threads)')
 
-    plt.legend()
+    plt.legend(frameon=False)
 
     # Save the graph
     plt.savefig('%s/png/%s.png' % (SAVE_DIR, name))

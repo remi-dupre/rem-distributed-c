@@ -1,0 +1,81 @@
+
+\documentclass{article}
+
+\usepackage[french]{babel} %
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{a4wide} %
+\usepackage{palatino} %
+
+\let\bfseriesbis=\bfseries \def\bfseries{\sffamily\bfseriesbis}
+
+
+\newenvironment{point}[1]%
+{\subsection*{#1}}%
+{}
+
+\setlength{\parskip}{0.3\baselineskip}
+
+\begin{document}
+
+\title{A distributed memory variation of REM algorithm to find connected components}
+
+\author{Rémi Dupré, Fredrik Manne, Bergen Algorithms Research Group}
+
+\date{Mars-Août 2018}
+
+\maketitle
+
+\pagestyle{empty} %
+\thispagestyle{empty}
+
+
+\begin{point}{Le contexte général}
+
+  La recherche de composante connexes d'un graphe est un problème d'algorithmique très classique, pourtant peu de travail a été accomplis pour obtenir une version distribuée de cet algorithme jusqu'à présent.
+  Frederik Manne, mon maitre de stage a participéà publier un papier en 2004 qui construit un algorithme permetant de résoudre ce problème sur une machine à mémoire distribuée.
+  Cependant il a publié il y a quelques années une comparaison des différents algorithmes séquentiels variant du union-find qui laisse entrevoir une approche plus simple du problème.
+
+\end{point}
+
+\begin{point}{Le problème étudié}
+
+  Les algorithmes variant du union find sont très efficace, autant du point de vue de leur complexité théorique, de leur utilisation pratique et de la simplicité de leur implémentation.
+  En revanche, l'analyse moderne de graphes semble se rapprocher des limites techniques des machines, une solution pour entre autre réduire la complexité mémoire d'un tel problème est de réussir à trouver un algorithm distribué pouvant répartir la charge sur plusieurs ordinateurs.
+
+  L'algorithme REM, bien que décrit il y a déjà plusieurs dizaines d'années, n'a jamais attiré l'attention, en particulier du fait que sa complexité dans le pire cas soit moins bonne que celle de ses concurents.
+  Cependant celui ci s'est montré être la solution la plus performante à la recherche de composantes dans le cas pratique.
+  L'algorithme semblant de plus être plus simple à adapter sous forme distribuée, tout semble indiquer que cela n'a pas encore été réalisé uniquement à cause de son manque de notoriété.
+
+\end{point}
+
+\begin{point}{La contribution proposée}
+
+  J'ai d'abord décrit un algorithme distribué résolvant le problème, qui a ensuite pu être simplifié.
+  J'ai ensuite implémenté cet algorithme pour pouvoir tester ses performances en les comparant aux algorithmes non distribué et observant l'évolution des performances en fonction des ressources utilisées.
+
+  Plusieurs variations ont été tentées sur l'algorithmes avec plus ou moins de succès, en particulier la possibilité d'exploiter de la mémoire partagée sur chaque instance de l'algorithme distribué.
+
+\end{point}
+
+\begin{point}{Les arguments en faveur de sa validité}
+
+  Dans les capacité de mes observations cet algorithme s'est montré expérimentalement efficace dans sa forme la plus simple, et est suffisament souple pour permettre des observations futures.
+
+  Bien que mon implémenatation n'a pas semblé être la plus efficace possible elle a prouvé le potentiel de l'algorithme et a permis d'évaluer la pertinence de certaines améliorations.
+
+\end{point}
+
+
+\begin{point}{Le bilan et les perspectives}
+  L'algorithme décrit semble être une très bonne base de travail qui mérite d'être ameiliorée et adaptés pour différentes applications.
+
+  Je n'ai malheureusement pas pu mettre la main sur l'implémentation du prédédent algorithme distribué, mais j'aurais souhaité pouvoir en comparer les performances, et savoir si utiliser REM a consitué un progrès dans les performances en plus de simplifier l'approche.
+
+  Il serait également interessant de pouvoir vérifier le comportement de l'algorithme sur un encore plus grand nombre de noeuds, afin de confirmer qu'il puisse par exemple être utilisé dans un processus très lourd de calculs.
+
+\end{point}
+
+
+\end{document}
+

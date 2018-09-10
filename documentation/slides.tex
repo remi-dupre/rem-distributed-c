@@ -21,6 +21,35 @@
 
 \section{REM algorithm}
 
+\begin{frame}{Representing a component}
+  \begin{figure}
+    \begin{tikzpicture}[shorten >=1pt,->]
+      \tikzstyle{vertex} = [circle, draw=black]
+      \tikzstyle{legend} = [color=gray, font=\tiny]
+
+      % Nodes
+      \foreach \index / \x in {0/5, 1/6, 2/1, 3/4, 4/0, 5/2}
+        \node[vertex] (\index) at (\x, 5-\index) {$\index$};
+
+      % Edges
+      \draw[->] (4) -- (2);
+      \draw[->] (5) -- (2);
+      \draw[->] (1) -- (0);
+      \draw[->] (3) -- (0);
+
+      % Disjoint set
+      \tikzstyle{value} = [draw=black, fill=blue!15, minimum width=0.5cm, minimum height=0.5cm]
+      \tikzstyle{index} = [color=darkgray, font=\small]
+
+      \foreach \i / \x in {0/0, 1/0, 2/2, 3/0, 4/2, 5/2} {%
+          \node[index] at (2 + \i / 2, -1) {\i};
+               \node[value] at (2 + \i / 2, -1.5) {\x};
+      }
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
 \begin{frame}{Inserting an edge}
   \only<1> {$p(5) > p(3)$}
   \onslide<2> {$p(2) > p(3)$}
@@ -36,17 +65,17 @@
 
       % Edges
       \draw[->] (4) -- (2);
-      \onslide<-2> {
+      \onslide<-2>{%
         \draw [->] (2.90) arc (2:264:3mm) {} (0);
       }
-      \onslide<3-> {
+      \onslide<3->{%
         \draw[green, ->] (2) -- (0);
       }
 
-      \onslide<-1> {
+      \onslide<-1>{%
         \draw[->] (5) -- (2);
       }
-      \onslide<2-> {
+      \onslide<2-> {%
         \draw[green, ->] [in=225, out=120] (5) to (0);
       }
 
@@ -59,13 +88,13 @@
       \onslide<2>{\draw[dotted, -] (2) -- (3);}
 
       % r_x and r_y legend
-      \onslide<1> {
+      \onslide<1> {%
         \node[legend, right=0mm of 5] {$r_x$};
         \node[legend, right=0mm of 3] {$r_y$};
         \node[legend, right=0mm of 2] {$p(r_x)$};
         \node[legend, right=0mm of 0] {$p(r_y)$};
       }
-      \onslide<2> {
+      \onslide<2> {%
         \node[legend, right=0mm of 2] {$p(r_x) = r_x$};
         \node[legend, right=0mm of 3] {$r_y$};
         \node[legend, right=0mm of 0] {$p(r_y)$};
@@ -92,35 +121,35 @@
         \node[vertex] (\index) at (\x, 5-\index) {$\index$};
 
       % Edges
-      \onslide<-4> {
+      \onslide<-4> {%
         \draw [->] (1.90) arc (1:264:3mm) {} (1);
       }
-      \onslide<-3> {
+      \onslide<-3> {%
         \draw[->] (4) -- (1);
       }
-      \onslide<-1> {
+      \onslide<-1> {%
         \draw[->] (5) -- (4);
       }
 
       \draw [->] (0.90) arc (0:264:3mm) {} (0);
       \draw[->] (2) -- (0);
-      \onslide<-2> {
+      \onslide<-2> {%
         \draw[->] (3) -- (2);
       }
 
-      \onslide<2-> {
+      \onslide<2-> {%
         \draw[green, ->] (5) -- (2);
       }
 
-      \onslide<3-> {
+      \onslide<3-> {%
         \draw[green, ->] (3) -- (1);
       }
 
-      \onslide<4-> {
+      \onslide<4-> {%
         \draw[green, ->] (4) -- (0);
       }
 
-      \onslide<5-> {
+      \onslide<5-> {%
         \draw[green, ->] (1) -- (0);
       }
 
@@ -131,25 +160,25 @@
       \onslide<4>{\draw[dotted, -] (1) -- (2);}
 
       % r_x and r_y legend
-      \onslide<1> {
+      \onslide<1> {%
         \node[legend, right=0mm of 5] {$r_x$};
         \node[legend, right=0mm of 4] {$p(r_x)$};
         \node[legend, right=0mm of 3] {$r_y$};
         \node[legend, right=0mm of 2] {$p(r_y)$};
       }
-      \onslide<2> {
+      \onslide<2> {%
         \node[legend, right=0mm of 4] {$r_x$};
         \node[legend, right=0mm of 1] {$p(r_x)$};
         \node[legend, right=0mm of 3] {$r_y$};
         \node[legend, right=0mm of 2] {$p(r_y)$};
       }
-      \onslide<3> {
+      \onslide<3> {%
         \node[legend, right=0mm of 4] {$r_x$};
         \node[legend, right=0mm of 1] {$p(r_x)$};
         \node[legend, right=0mm of 2] {$r_y$};
         \node[legend, right=0mm of 0] {$p(r_y)$};
       }
-      \onslide<4> {
+      \onslide<4> {%
         \node[legend, right=0mm of 1] {$p(r_x) = r_x$};
         \node[legend, right=0mm of 2] {$r_y$};
         \node[legend, right=0mm of 0] {$p(r_y)$};
@@ -164,3 +193,4 @@
 
 
 \end{document}
+

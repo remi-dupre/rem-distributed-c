@@ -14,9 +14,9 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{apacite}
+\usepackage{float}
 \usepackage{stmaryrd}
 \usepackage{tikz}
-\usepackage{todonotes}
 \usepackage{wrapfig}
 
 
@@ -24,9 +24,9 @@
 \newtheorem{lemma}[theorem]{Lemma}
 
 
-\title{Internship report}
-\author{Rémi Dupré}
-
+\title{A distributed memory variation of REM algorithm to find connected components}
+\author{Internship report - Rémi Dupré - Advised by Frederik Manne}
+\date{March 13th - August 16th}
 
 \begin{document}
   \maketitle
@@ -36,9 +36,14 @@
   \pagebreak
 
   \section{Introduction}
-    % Some bullshit is expected here I guess ?
-    % Goal of the internship (maybe quickly as not everything is supposed to be introduced)
-    % Technical informations about the internship, team, ...
+    The size of graphs used by scientific community hasn't stopped from growing up, noticeable example can come up from social graphs or web crawls.
+    Even though finding the connected components of a graph is a really well-known problem, only few works has been done to write a distributed algorithm and allow to easily work on bigger graphs.
+    Such an effort has been done only a few year ago by \citeA{ufdist09} a few years ago but still.
+
+    I was invited by Fredrik Manne to do an internship for him in the University of Bergen and try to adapt REM algorithm that he had more recently analysed into a distributed algorithm.
+
+    The second goal of my internship was also to find a way to efficiently use both shared and distributed mechanisms.
+
 
   \section{Context and state of the art}
     % Give any information about what isn't my work
@@ -120,24 +125,23 @@
           \end{minipage}
         \end{wrapfigure}
 
-        A very typical application of this structure is to find a spaning forest for an undirected graph. 
+        A very typical application of this structure is to find a spanning forest for an undirected graph. 
         A general algorithm used to answer this problem is called \emph{union-find} (alg.~\ref{alg:union-find}).
 
-        Typically, \textsc{find} runs over the tree until it reaches the root, keeps track of every nodes on the path and finally set their parent to be the root. In this case \textsc{union} doesn't need to compress the trees and will just make one of the roots be parent of the other, the new root can be chosen arbitrary or given a criteria (index, rank \dots).
+        Typically, \textsc{find} runs over the tree until it reaches the root, keeps track of every node on the path and finally set their parent to be the root. In this case \textsc{union} doesn't need to compress the trees and will just make one of the roots be parent of the other, the new root can be chosen arbitrary or given a criterion (index, rank \dots).
 
-        This algorithm can actualy be implemented with many variations (\citeA{ufexp10}), where a typical goal is to make sure that trees never get too high, thus compressing the path leading to the root while processing \textsc{find} operation.
+        This algorithm can actually be implemented with many variations (\citeA{ufexp10}), where a typical goal is to make sure that trees never get too high, thus compressing the path leading to the root while processing \textsc{find} operation.
 
 
       \subsubsection{REM algorithm}
         % Definition and analysis of REM, explaination on why it is awesome
-        \todo[noline,color=green!30,inline]{Add a reference to \emph{Dijkstra, E.W.: A Discipline of Programming}?}
 
         \setlength\intextsep{0pt}
         \begin{wrapfigure}{r}{5cm}
           \centering
           \begin{minipage}{\linewidth}
             \begin{algorithm}[H]
-              \caption{Rem's algorithm}%
+              \caption{REM algorithm}%
               \label{alg:rem}
               \begin{algorithmic}[1]
                 \State $r_x \gets x, r_y \gets y$
@@ -167,16 +171,15 @@
         \end{wrapfigure}
 
       A familly of variation, called \emph{interleaved algorithms} in \citeA{ufexp10} replaces the two separate find operations at line 5 of Union-Find (alg.~\ref{alg:union-find}). This kind of algorithm will instead operate by running over the forest simultaneously from the two starting nodes. The first advantage of this kind of algorithm is that it won't need to reach both roots on every case.
-      In Rem's algorithm, line 5 and 6 of algorithm~\ref{alg:union-find} are replaced by algorithm~\ref{alg:rem} which handles find operations, merging components if they are disconnected and compression in one loop.
+      In REM algorithm, line 5 and 6 of algorithm~\ref{alg:union-find} are replaced by algorithm~\ref{alg:rem} which handles find operations, merging components if they are disconnected and compression in one loop.
 
-      During all of the execution of the algorithm, we assume that the disjoint set structures always have any parent lower than its children (a sequence of nodes from a root to a leaf would be increasing).
-      This hypothesis allows REM algorithm to process a run on each side of a node, and pausing the one that got the lowest index, that way if two nodes have a common ancester, the algorithm will reach a state where both runs just reached it and can conclude that these two nides where previously in the same component.
+      During all the execution of the algorithm, we assume that the disjoint set structures always have any parent lower than its children (a sequence of nodes from a root to a leaf would be increasing).
+      This hypothesis allows REM algorithm to process a run on each side of a node, and pausing the one that got the lowest index, that way if two nodes have a common ancestor, the algorithm will reach a state where both runs just reached it and can conclude that these two nodes where previously in the same component.
 
       As searching and merging operation are done as a single operation, there is no problem with merging any subtree of the algorithm while it runs. This algorithm will take benefits of that, at each step it will make sure that given the two current nodes $r_x$ and $r_y$ of both runs, they will both have the lowest parent of the two (for example if $p(r_x) > p(r_y)$, then the new parent of $r_x$ will be $p(r_y)$).
 
-      A union-find algorithm can typically be implemented to fit a worst case complexity of $O(n + m \cdot \alpha(m, n))$ where $\alpha$ is the inverse of Ackermann's function, $n = |V|$ and $m = |E|$. Rem's algorithm however, has a worst case complexity in $O(n + m^2)$. 
-      Nevertheless, this algorithm shows better performances on practice, I didn't try to proove it but it should have an average complexity that fits to the previous $O(n + m \cdot \alpha(m, n))$.
-      \todo[color=blue!30,fancyline]{Reference or proof}
+      A union-find algorithm can typically be implemented to fit a worst case complexity of $O(n + m \cdot \alpha(m, n))$ where $\alpha$ is the inverse of Ackermann's function, $n = |V|$ and $m = |E|$. REM algorithm however, has a worst case complexity in $O(n + m^2)$. 
+      Nevertheless, this algorithm shows better performances on practice, I didn't try to prove it but it should have an average complexity that fits to the previous $O(n + m \cdot \alpha(m, n))$.
 
     \subsection{Distributed algorithms}
       % Introduction to distributed algorithmic, existing implementation
@@ -184,19 +187,20 @@
       This may be due to the fact that this algorithm is close to optimal, as much for its speed as for its memory complexity.
       It is possible however that because of the size of the input graph, the nodes don't fit in memory, \citeA{ufdist09} mentioned that an application to Hessian matrices can reach this limit.
 
-      \subsubsection{Distributed algorithms}
-        A distributed algorithm is a parallel algorithm that doesn't use any shared memory. It means that it can run on a set of interconnected processors which don't need any shared hardware.
+      \subsubsection{Introduction}
+        A distributed algorithm is a parallel algorithm that doesn't use any shared memory.
+        It means that it can run on a set of interconnected processors which don't need any shared hardware.
 
         In our specific case we will only focus on the specific case where the algorithm can fit to the Bulk model where it runs on the following scheme:
           \begin{enumerate}
-            \item Communicate with other processors to get new datas.
-            \item Process localy, without any communication.
+            \item Communicate with other processors to get new data.
+            \item Process locally, without any communication.
             \item Wait for other processes to finish their work. This step is called a barrier.
             \item Return to the communication step (1).
           \end{enumerate}
         Theses steps are called \emph{super steps}, and while describing such an algorithm we want to describe what are the local computations during step (2) and which data will be exchanged between each pair of process during the communication step.
 
-        While following this scheme it is not hard to express a theorical asymptotic time complexity in of form like
+        While following this scheme it is not hard to express a theoretical asymptotic time complexity in of form like
           \[ T = W + H.g + S.l \]
         where $T$, $W$, $H$ and $S$ are functions of the input parameters:
           \begin{itemize}
@@ -205,31 +209,36 @@
             \item $H$ is the number of messages sent (assuming they are of equal size).
             \item $S$ is the number of barrier steps.
           \end{itemize}
-        Finaly, $g$ and $l$ are constants representing the time spent to deliver a message and to execute a barrier step. These two constants are widely depending on the network setup used to executed the algorithm and on the speed of the processor.
+        Finally, $g$ and $l$ are constants representing the time spent to deliver a message and to execute a barrier step. These two constants are widely depending on the network setup used to execute the algorithm and on the speed of the processor.
 
-        Notice that even though this complexity is as simple at it can be (we could split $H.g$ to take the bandwith and the latency into account), it is already realy hard to evaluate each hardware-dependant constants. Thus, the testing phase takes an important place in the conception of a distributed algorithm.
+        Notice that even though this complexity is as simple as it can be (we could split $H.g$ to take the bandwidth and the latency into account), it is already really hard to evaluate each hardware-dependant constants. Thus, the testing phase takes an important place in the conception of a distributed algorithm.
 
       \subsubsection{Idea}
-        \citeA{ufdist09} introduced an parallization of the algorithm, based on an approach close to REM\@.
+        \citeA{ufdist09} introduced an parallelization of the algorithm, based on an approach close to REM\@.
         The same kind of zigzag merge operation is done by comparing the rank of $r_x$ and $r_y$, where the rank is the depth of a node in its component's tree.
         This process is extended to a distributed implementation by attributing for each vertex an unique process. Then, a disjoint-set structure will be stored among processes, for any node $x$, only the owner of $x$ knows the value of $p(x)$.
-        Something close to the sequential algorithm can then be executed by sending messages between processes whenever the current process can't run anymore the algorithm because it doesn't own $r_x$ or $r_y$ depending on their ranks.
-        This algorithm had an issue of clarity as many specific cases had to be handled with a patch. However results showed that it was nicely scalable and where encouraging some refinement.
+        Something close to the sequential algorithm can then be executed by sending messages between processes whenever the current process can't run any more the algorithm because it doesn't own $r_x$ or $r_y$ depending on their ranks.
+        This algorithm had an issue of clarity as many specific cases had to be handled with a patch. However results showed that it was nicely scalable and were encouraging some refinement.
 
-      \subsubsection{Repartition}
+      \subsubsection{Partitioning}
         As the operations likely to be the most time-expensive, the main goal is to reduce communication charge.
-        Thus, the actual first step of a distributed union-find algorithm would be to eliminate for each processing node as much edges as possible before making any communication.
+        Thus, the actual first step of a distributed union-find algorithm would be to eliminate for each processing node as many edges as possible before making any communication.
+
+        It is more than helpfull if a process owns vertices that belong to the same dense area of the graph.
+        It would mean that it is more likely that two vertices are in the same component of the sub graph containing vertices the process owns and this means that some of the nodes connecting them can be eliminated before any communication occurs.
+
+        Fredrik explained to me that in his previous work a software was used to partition smartly the graph but that it might not be relevant as it was running substantially slower than their algorithm.
+
+        To take this issue into account without requiring any big computation my approach is simply to set each process to own nodes of consecutive indexes. Even though it wouldn't have any impact on an arbitrary input, a great majority of sparse graphs are more likely to connect nodes of close indexes.
 
     \subsection{Shared algorithms}
       % Introduction to shared algorithmic, existing implementation
-      \citeA{ufshar12} showed that REM was a very convenient algorithm to adapt for parallelized computing. As it only modifies one side of the edge during each step of the merge operation, it can very easily be implemented for several cores using locks.
-      \todo[color=green!30,fancyline]{Add this algorithm somewhere}
-      But as locks are slow, the paper also introduce a lock-free approach that is much quicker. This approch processes by inserting edge in the structure in a first step that doesn't try to fix concurency issues. Then, the algorithm checks that each edge that added informations to the structure is still inside a component of the structure, the algorithm restarts with the set of theses node that were not connected as input and halts when this set is empty.
+      \citeA{ufshar12} showed that REM was a very convenient algorithm to adapt for parallelized computing. As it only modifies one side of the edge during each step of the merging operation, it can very easily be implemented for several cores using locks.
+      But as locks are slow, the paper also introduce a lock-free approach that is much quicker. This approach processes by inserting edge in the structure in a first step that doesn't try to fix concurrency issues. Then, the algorithm checks that each edge that added informations to the structure is still inside a component of the structure, the algorithm restarts with the set of these node that were not connected as input and halts when this set is empty.
 
 
   \section{Writing REM as a distributed memory algorithm}
     % Description of the algorithm, experimental results
-    \setlength\intextsep{0pt}
     \begin{wrapfigure}{r}{6.5cm}
       \centering
       \begin{minipage}{\linewidth}
@@ -260,43 +269,213 @@
     \subsection{Core idea}
       I started my internship by writing a distributed algorithm based on the REM algorithm. After only a few versions, it appeared that it was possible to write an algorithm very close to the sequential one: executing the same conditions, where half of the decisions are to request another process.
 
-      Each node keeps a set of pairs $(r_x, r_y)$, as in the sequential algorithm, this means that $r_x$ and $r_y$ have to be in the same component of resulting tree.
-      This algorithm operate using a supersteps scheme: it will sequentially handle a chunk of edges on each processing node, then will synchronise every node and exchange datas between them and start again.
+      Each node keeps a set of pairs $(r_x, r_y)$, as in the sequential algorithm, this means that $r_x$ and $r_y$ have to be in the same component of resulting structure.
+      This algorithm operates using a supersteps scheme: it will sequentially handle a chunk of $K$ edges on each processing node, runing on the local trees from $r_x$.
+      This run will result on a new state for REM algorithm, which could require to execute a run starting a node owned by another process, thus this state (a new edge $r_x, r_y$) is stored into a cache to be sent to the concerned process.
 
-      Algorithm~\ref{alg:rem_distributed} describes how a node can handle a pair $(r_x, r_y)$.
-      It runs on a node that received $(r_x, r_y)$ and expects that the sender made sure that the current node owns $r_x$. Then the algorithm runs on its knowledge of the tree by processing the ``local root'' of $r_x$ (ie.\ the highest parent of $r_x$ in the disjoint set structure maintained by this process).
+      Algorithm~\ref{alg:rem_distributed} describes how a process can handle a pair $(r_x, r_y)$.
+      It runs on a process that received $(r_x, r_y)$ and expects that the sender made sure that the current process owns $r_x$. Then the algorithm runs on its knowledge of the tree by processing the ``local root'' of $r_x$ (ie.\ the highest parent of $r_x$ in the disjoint set structure maintained by this process).
       From there, the algorithm can either conclude that this edge is already inside a component of the disjoint-set structure or send a new edge to process to another node.
 
-    \subsection{Avoiding unecessary communications}
-      As communication between process are very slow compared to the processor's computation, the most communications can be avoided the better it usually is. Thus, if a node has the ability to eliminate an edge, it should be done as soon as possible.
+    \subsection{Avoiding unnecessary communications}
+      As communication between process are very slow compared to the processor's computation, the most communications can be avoided the better it usually is.
+      Thus, if a process has the ability to conclude on an edge, creating no extra communication, it should be done.
 
-      Before any communication a process will isolate every edges $(x, y)$ it received such that it owns both $x$ and $y$. Then, it will localy process the spaning forest (algo.~\ref{alg:rem}) of these edges, which doesn't require any communication.
-      Thus, the only remaining edges are edges that connect nodes owned by two different process.
+      \subsubsection{Processing the spanning forest of local edges}
+        Before any communication a process will isolate every edge $(x, y)$ it received such that it owns both $x$ and $y$.
+        Then, it will localy process the spaning forest (algo.~\ref{alg:rem}) of these edges, which doesn't require any communication.
+        Thus, the only remaining edges are edges that connect nodes owned by two different process. For conveniance, we can assume that $x$ is always owned by current process.
 
-      Some of the edges linking two process can also be localy filtered.
-      Given two edges $(x_1, y)$ and $(x_2, y)$, assuming that the process owns $x_1$ and $x_2$, if it already knows that $x_1$ and $x_2$ are in the same component, only one of them is required.
-      After processing local initial components and before any communication, on every edge $(x, y)$ where $x$ is owned by the process, $x$ can be replaced by its local root. Finally, duplicates can be eliminated.
+      \subsubsection{Filtering redundancy at the border}
+        Some of the edges linking two process can also be localy filtered.
+        Given two edges $(x_1, y)$ and $(x_2, y)$, assuming that the process owns $x_1$ and $x_2$, if it already knows that $x_1$ and $x_2$ are in the same component, only one of them is required.
+        After processing local initial components and before any communication, on every edge $(x, y)$ where $x$ is owned by the process, $x$ can be replaced by its local root. Finally, duplicates can be eliminated.
 
+        The best algorithm I could come up with which would fit in a sub-linear memory complexity had a worst case time complexity of $O(n \ln n)$ where $n$ is the maximum number of edges a process receive at the begining of the algorithm.
+        This algorithm would update every owned node to point to its local root, then sort lexicographicaly the new list of edges and finally eliminate duplicates.
+        The replacing step can be done in a linear time complexity: first by compressing the disjoint-set datastructure, as this one is decreasing in REM's case, it can be done from left to right with only one step for each updated node.
+
+        Unfortunatly, I didn't manage to get this to run fast enough to be relevant.
+        It would typicaly remove 5\% of the nodes on a real-life input (such as a web crawl), but take 15\% of the total runing time to execute.
+
+        A previous algorithm seemed to be relevant on part of my input graphs, but it needed a linear memory complexity to run.
+        This consisted in completing the disjoint-set datastructure obtained with local edges, by running REM algorithm on other edges and eliminate an edge if it was already contained in a component of the disjoint-set structure.
 
   \section{Mixing up distributed and shared algorithms}
-    % Description of parallelized parts, experimental results
+    After having implemented both distributed and shared algorithm, it is quite direct to make it partially shared: the distributed algorithm runs REM steps twice, once while processing a spanning forest of local edges and once after each communication step.
+
+    The last part to parallelize is the filtering of edges that are initally between two process. To do so it is possible to first compress the disjoint-set structure (alg.~\ref{alg:shared_compress}), and then use it without altering it.
+
+    \begin{figure}
+      \centering
+      \begin{minipage}{8cm}
+        \begin{algorithm}[H]
+          \caption{Shared compression of a disjoint-set structure}%
+          \label{alg:shared_compress}
+          \begin{algorithmic}[1]
+            \Function{compress}{$p$, $process\_id$, $nb\_process$}
+              \State $x \gets process\_id$
+
+              \While {$x < sizeof(p)$}
+                \State $r_x \gets x$
+                \While {$p(r_x) \neq r_x$}
+                  \State $x, p(x) \gets p(x), p(p(x))$
+                \EndWhile
+
+                \State $x \gets x + nb\_process$
+              \EndWhile
+            \EndFunction
+         \end{algorithmic}
+        \end{algorithm}
+      \end{minipage}
+    \end{figure}
+
+    I assumed that the communication couldn't take any benefits from using several process, but it may not be accurate.
+    It would be interesting in further work to try making communication more homogeneous by always having a process ready to receive or send datas.
+
+  \section{Results}
+    \subsection{Technical setup}
+      All the implementation was done using \textsf{C 11} and compiling using \textsf{gcc} and the \textsf{-O3} flag.
+      I used the library \textsf{openmpi} to implement the \emph{message passing interface} convention used on distributed algorithms and \textsf{openmp} to implement shared memory algorithms.
+
+      Most of my tests at a lower scale was run on a computer built with four Intel Xeon E5 2699 v3, for a total of \emph{36 physical cores} and 30GB of ram.
+
+      For bigger tests I was allowed to access the HPC cluster of the University of Bergen.
+      Even though I haven't been allowed to use more than 32 nodes of this cluster, it appeared that it the algorithm scaled quite encouragingly up to this limit.
+
+      I gathered several inputs including web crawls, social graphs and randomly generated sparse graphs.
+      These inputs were quite large but the biggest one is a web crawl collected on 2004 that fits in 30GB of memory (to represent about $250 \times 10^6$ nodes). I got my biggest output but collecting every edges from openstreetmap's world's map.
+      I kept every path that were represented, including waterways and didn't filter nodes of degree two (thus, a road isn't usually represented with a single edge).
+      This input contains over a billion nodes and edges, which takes more than 100GB to represent, thus I wasn't able to compare performances on this algorithm with non-distributed implementations as it couldn't fit on my testing machines.
+
+    \subsection{Performances}
+      \begin{figure}[ht]
+        \label{graph:planet_4th}
+        \caption{run on osm's world map, 4 threads per process on the cluster}
+        \centering
+        \scalebox{0.7}{\input{graphs/planet_4threads.pgf}}
+      \end{figure}
+
+      The algorithm seemed to scale on as much resources as I could access.
+      Graph~\ref{graph:planet_4th} shows that increasing the number of processing nodes still enhanced performances up to 128 running process, notice that the chart starts at 10 process. Up to 128 process, each node of the cluster need hyper threading, and the running time remains constant.
+
+      \subsubsection{Scaling up the shared algorithm}
+        Unfortunately it appeared that the shared part of the algorithm, don't scale on a lot of threads.
+        As figure~\ref{graph:planet_incthreads} shows, it is not relevant to use more than 8 threads per process.
+
+        The main reason for this gap is that the implementation requires to realign buffers of data created by separates process, creating an extra unwanted cost.
+
+        \begin{figure}[H]
+          \label{graph:planet_incthreads}
+          \caption{run on osm's world map, increasing number of threads on each 32 cluster nodes}
+          \centering
+          \scalebox{0.7}{\input{graphs/planet_32process.pgf}}
+        \end{figure}
+
+      \subsubsection{Comparison to non-distributed algorithms}
+        I couldn't find any graph containing more than 100,000 edges such that the distributed algorithm runs slower than sequential REM\@.
+        On smaller graphs however, it appears that the cost of starting communications is too big in comparison of other computations.
+
+        We can also notice, with no big surprise, that the distributed algorithm is never as fast as the shared algorithm when running on a comparable amount of nodes.
+
+      \begin{figure}[H]
+        \label{graph:cmpinputs}
+        \caption{run on different inputs, using 6 threads per process on a 24 cores computer}
+        \centering
+        \scalebox{0.4}{\input{graphs/web.pgf}}
+        \scalebox{0.4}{\input{graphs/twitter.pgf}}
+        \scalebox{0.4}{\input{graphs/random24_64.pgf}}
+      \end{figure}
+
+      The tests on figure~\ref{graph:cmpinputs} were run on the same 24-cores computer, using 6 thread per process, which is why the algorithm stops scaling after using more than 4 process.
+      For comparison, the time spent by a sequential (black) and shared memory (red) algorithm are displayed on the graphs.
 
 
   \section{Conclusion}
+    Based on REM algorithm, I was able to write a promising distributed algorithm.
+    This algorithm is clean and simple enough to allow future enhancements.
+    Some improvements were described during my internship but there implementation didn't always showed them to be relevant.
+
+    It would be interesting in further work to continue searching for these kind of optimisations.
+    I was also only able to test the algorithm at a small and large scale, but some test are missing for a consequantly bigger scale, that would confirm the relevance of this algorithm on this kind of setup.
 
 
   \section{Appendices}
     % Proofs, maybe extra datas
+    \subsection{Shared memory algorithm}
+      This is the lockless approach described by~\citeA{ufshar12}.
+      This algorithm is only slightly modified on the differents parts of the distributed algorithms it can fit in.
+
+      \begin{figure}
+        \centering
+        \begin{minipage}{8cm}
+          \begin{algorithm}[H]
+            \caption{Shared memory REM algorithm}%
+            \label{alg:shared_rem}
+            \begin{algorithmic}[1]
+              \State $U = \emptyset$
+              \State
+              \For {$x, y \in L$}
+                \State $r_x \gets x$
+                \State $r_y \gets y$
+                \State
+                \While {$p(r_x) \neq p(r_y)$}
+                  \If {$p(r_x) < p(r_y)$}
+                    \If {$r_x = p(r_x)$}
+                      \State $p(r_x) \gets p(r_y)$
+                      \State $U \gets U \cup \{r_x, r_y\}$
+                    \Else
+                      \State $p_{r_x} \gets p(r_x)$
+                      \State $p(r_x) \gets p(r_y)$
+                      \State $r_x \gets p_{r_y}$
+                    \EndIf
+                  \Else
+                    \If {$r_y = p(r_y)$}
+                      \State $p(r_y) \gets p(r_x)$
+                      \State $U \gets U \cup \{r_y, r_x\}$
+                    \Else
+                      \State $p_{r_y} \gets p(r_y)$
+                      \State $p(r_y) \gets p(r_x)$
+                      \State $r_y \gets p_{r_x}$
+                    \EndIf
+                  \EndIf
+                \EndWhile
+              \EndFor
+              \State
+              \State Global barrier
+              \State
+              \For {$x, y \in U$}
+                \State $r_x \gets x, r_y \gets y$
+                \While {$p(r_x) \neq p(r_y)$}
+                  \If {$p(r_x) < p(r_y)$}
+                    \If {$p(r_x) = r_x$}
+                      \State mark $x_ y$ for further processing
+                    \Else
+                      \State $r_x \gets p(r_x)$
+                    \EndIf
+                  \Else
+                    \If {$p(r_y) = r_y$}
+                      \State mark $x_ y$ for further processing
+                    \Else
+                      \State $r_y \gets p(r_y)$
+                    \EndIf
+                  \EndIf
+                \EndWhile
+              \EndFor
+            \end{algorithmic}
+          \end{algorithm}
+        \end{minipage}
+      \end{figure}
 
     \subsection{Correctness and halt of distributed algorithm}
-      As I didn't find a proof for the sequencial algorithm, this proof also stands as my proof of this algorithm, this is the kind of reasoning that helped me understanding it at the begining of my internship.
-      This proof is quite straightforward but it heavily rely on the introduction of a lot of notations.
+      As I didn't find a proof for the sequential algorithm, this proof also stands as my proof of this algorithm, this is the kind of reasoning that helped me understanding it at the beginnning of my internship.
+      This proof is quite straightforward but it heavily relies on the introduction of a lot of notations.
 
 
       \subsubsection{Notations}
-        In order to make the proof clearer, some of the structures will be simplified. The state of the algorithm can be sumed up with following structures:
+        In order to make the proof clearer, some of the structures will be simplified. The state of the algorithm can be summed up with following structures:
 
-        \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus we can use two kind of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm however, only the process owning $x$ knows the value of $p(x)$.
+        \paragraph{dset} is the forest holding the disjoint set structure representing $p$. Thus, we can use two kinds of notations: $p(x) = y \Leftrightarrow (x, y) \in dset \text{ and } (y, x) \in dset$. Notice that as vertices are partitioned between process, it is not necessary to split this structure into one per process, in the actual algorithm however, only the process owning $x$ knows the value of $p(x)$.
 
         \paragraph{tasks} is a graph containing all the pairs $(r_x, r_y)$ the algorithm needs to handle. Such a pair can be an edge of the original graph, or a task sent by another process. As the proof will not need to order how the tasks are handled, it is enough to only consider the union all tasks received by all process.
 
@@ -304,19 +483,24 @@
 
         \paragraph{equivalence} a relation $\sim$ is defined as $G_1$ $\sim$ $G_2$ $\Leftrightarrow$ $G_1$ and $G_2$ have the same components. \\
 
-        A step of the algorithm consists in poping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying
+        A step of the algorithm consists in popping a task $(r_x, r_y)$ from the graph $tasks$ and then by applying
         algorithm~\ref{alg:rem_distributed} the states in $dset$ and $tasks$ is modified.
-        Given a run, we will denotate the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$ (cf.\ algorithm~\ref{alg:construct_dset_tasks}).
+        Given a run, we will label the state of the algorithm after $t$ iterations by $dset_t$ and $tasks_t$ (cf.\ algorithm~\ref{alg:construct_dset_tasks}).
 
-        \begin{algorithm}
-          \caption{Construction of $dset_{t+1}$ and $tasks_{t+1}$}%
-          \label{alg:construct_dset_tasks}
-          \begin{algorithmic}[1]
-            \State $dset_{t+1} = dset_t$
-            \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ for a $(r_x, r_y) \in tasks_t$
-            \State Apply algorithm~\ref{alg:rem_distributed} on $owner(r_x)$.
-          \end{algorithmic}
-        \end{algorithm}
+        \begin{figure}
+          \centering
+          \begin{minipage}{8cm}
+            \begin{algorithm}[H]
+              \caption{Construction of $dset_{t+1}$ and $tasks_{t+1}$}%
+              \label{alg:construct_dset_tasks}
+              \begin{algorithmic}[1]
+                \State $dset_{t+1} = dset_t$
+                \State $tasks_{t+1} = tasks_t \setminus (r_x, r_y)$ for a $(r_x, r_y) \in tasks_t$
+                \State Apply algorithm~\ref{alg:rem_distributed} on $owner(r_x)$.
+              \end{algorithmic}
+            \end{algorithm}
+          \end{minipage}
+        \end{figure}
 
         The algorithm is initialised with state $dset_0 = \{(i, i)~/~i \in V\}$ and $tasks = G$.
 
@@ -333,21 +517,21 @@
               Then $(r_x, r_y) \in dset_t = dset_{t+1}$, then $union\_graph_t = union\_graph_{t+1}$.
 
             \item If $p_t(r_x) < r_y$, then $(r_y, p_t(r_x))$ is inserted in $tasks_{t+1}$. \\
-              Thus on any path containing $(r_x, r_y) \in tasks_t$, the edge $(r_x, r_y)$ can be replace by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$. No separate component are merged as $p_t(r_x)$ and $r_x$ were in the same component.
+              Thus, on any path containing $(r_x, r_y) \in tasks_t$, the edge $(r_x, r_y)$ can be replaced by edges $(r_x, p_t(r_x)) \in dset_t = dset_{t+1}$ and $(p_t(r_x), r_y) \in tasks_{t+1}$. No separate component are merged as $p_t(r_x)$ and $r_x$ were in the same component.
 
             \item If $p_t(r_x) > r_y$:
             \begin{itemize}
               \item If $p_t(r_x) = r_x$, then $(r_x, r_y)$ is added to $dset_{t+1}$. \\
                 Then $union\_graph_t = union\_graph_{t+1}$ as $tasks_t \setminus tasks_{t+1} = {(r_x, r_y)}$.
               \item If $p_t(r_x) \neq r_x$, $(r_x, r_y)$ replaces $(r_x, p_t(r_x))$ in $dset_{t+1}$ and $(p_t(r_x), r_y)$ is added to $tasks_{t+1}$. \\
-                All theses nodes were part of the same component in $union\_graph_t$, no components are merged. Moreover, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
+                All these nodes were part of the same component in $union\_graph_t$, no components are merged. Moreover, $(r_x, r_y)$ is added to $dset_{t+1}$, not path using this edge is broken. Finaly, there is a new path from $r_x$ to $p_t(r_x)$: $(r_x, r_y)(r_y, p_t(r_x))$ with $(r_x, r_y) \in dset_{t+1}$ and $(r_y, p_t(r_x)) \in tasks_{t+1}$.
             \end{itemize}
           \end{itemize}
         \end{proof}
 
         \begin{lemma}%
           \label{lemma:halt}
-          Runing algorithm~\ref{alg:construct_dset_tasks} until there is no task left in $tasks_t$ will halt.
+          Running algorithm~\ref{alg:construct_dset_tasks} until there is no task left in $tasks_t$ will halt.
         \end{lemma}
 
         \begin{proof}
@@ -358,19 +542,16 @@
         \end{proof}
 
         \begin{theorem}[Correctness]
-          Runing algorithm~\ref{alg:rem_distributed} until there is no more tasks will result in dset beiing a spaning forest of the initial graph.
+          Running algorithm~\ref{alg:rem_distributed} until there is no more tasks will result in dset beiing a spaning forest of the initial graph.
         \end{theorem}
 
         \begin{proof}
-          Lemma~\ref{lemma:halt} ensures that there is $t \in \mathbb{N}$ such that $tasks_t = \emptyset$. Finally, using Lemma~\ref{lemma:transitivity} we have:
+          Lemma~\ref{lemma:halt} ensures that there is $t \in \mathbb{N}$ such that $tasks_t = \emptyset$. Finaly, using Lemma~\ref{lemma:transitivity} we have:
             \[ G \sim tasks_0 = union\_graph_0 \sim union\_graph_1 \sim \hdots \sim union\_graph_t = dset_t. \]
         \end{proof}
 
 
-    \citeA{ufdist09}
-    \citeA{ufexp10}
-
-
+  \pagebreak
   \bibliographystyle{apacite}
   \bibliography{references}
 \end{document}
