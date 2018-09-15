@@ -19,6 +19,12 @@ Running **make** will create all binary files.
 git clone https://github.com/remi-dupre/rem-distributed.git
 cd rem-distributed
 make
+
+# If you want to run without debuging flags and optimisations parameters
+make release
+
+# You might want to modify some of the constant parameters
+make DFLAGS="-DMAX_LOCAL_ITER=100000 -DNB_THREADS=8" release
 ```
 
 
