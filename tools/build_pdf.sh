@@ -1,5 +1,5 @@
 #!/bin/bash
-to_build="algorithm graphs report"
+to_build="algorithm slides report"
 
 cd documentation
 mkdir -p pdf
