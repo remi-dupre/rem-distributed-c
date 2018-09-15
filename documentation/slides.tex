@@ -3,195 +3,392 @@
 %%
 \documentclass{beamer}
 
+\usepackage{array}
+\usepackage{subfig}
 \usepackage{tikz}
-\usetikzlibrary{arrows}
 \usepackage{verbatim}
 
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 
 
-\usetheme{CambridgeUS}
+\usetheme{Singapore}
+
+\usetikzlibrary{arrows}
+\usetikzlibrary{math}
 \usetikzlibrary{positioning}
 
 
+\title{A distributed memory variation of REM algorithm to find connected components}
+\subtitle{M1 internship}
+\author{Fredrik Manne - Rémi Dupré}
+\institute[UiB]{University of Bergen}
+\date{March - August 2018}
+
+
 \begin{document}
+\maketitle
 
+\section{Introduction}
 
-\section{Union-Find algorithm}
-
-\section{REM algorithm}
+  \begin{frame}{Introduction}
+    \begin{figure}
+      \center
+      \includegraphics[scale=0.1,width=50mm,height=30mm]{bergen.jpg}
+      \includegraphics[scale=0.2,width=50mm,height=30mm]{map.png}
+    \end{figure}
+  \end{frame}
 
   \begin{frame}{Connected components and spanning forests}
+    \begin{figure}
+      \only<1>{\caption{A graph $G$}}
+      \only<2>{\caption{A spanning forest of $G$}}
 
+      \begin{tikzpicture}
+        \tikzstyle{vertex} = [circle, draw=black]
+
+        \node[vertex] (0) at (6, 2) {$0$};
+        \node[vertex] (1) at (3, 1) {$1$};
+        \node[vertex] (2) at (8, 2) {$2$};
+        \node[vertex] (3) at (2, 4) {$3$};
+        \node[vertex] (4) at (8, 4) {$4$};
+        \node[vertex] (5) at (1, 2) {$5$};
+        \node[vertex] (6) at (6, 4) {$6$};
+
+        \draw[-] (5) -- (3);
+        \draw[-] (3) -- (1);
+        \draw[-] (6) -- (4);
+        \draw[-] (4) -- (2);
+        \draw[-] (0) -- (4);
+
+        \onslide<1> {%
+          \draw[-] (1) -- (5);
+          \draw[-] (0) -- (6);
+          \draw[-] (2) -- (0);
+        }
+        \onslide<2> {}
+      \end{tikzpicture}
+    \end{figure}
   \end{frame}
 
   \begin{frame}{Representing a component}
+    \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{figure}
+        \caption{Disjoint-set structure representing the partition $\{2,4,5\}$, $\{0,1,3\}$}
+        \begin{tikzpicture}[shorten >=1pt,->,scale=0.8]
+          \tikzstyle{vertex} = [circle, draw=black]
+          \tikzstyle{legend} = [color=gray, font=\tiny]
+
+          % Nodes
+          \foreach \index / \x in {0/5, 1/6, 2/1, 3/4, 4/0, 5/2}
+            \node[vertex] (\index) at (\x, 5-\index) {$\index$};
+
+          % Edges
+          \draw[->] (4) -- (2);
+          \draw[->] (5) -- (2);
+          \draw[->] (1) -- (0);
+          \draw[->] (3) -- (0);
+
+          % Disjoint set
+          \tikzstyle{value} = [draw=black, fill=blue!15, minimum width=0.5cm, minimum height=0.5cm]
+          \tikzstyle{index} = [color=darkgray, font=\small]
+
+          \foreach \i / \x in {0/0, 1/0, 2/2, 3/0, 4/2, 5/2} {%
+            \node[index] at (2 + \i * 1.25 / 2, -1) {\i};
+            \node[value] at (2 + \i * 1.25 / 2, -1.75) {\x};
+          }
+          \node[] at (1, -1) {$i$};
+          \node[] at (1, -1.75) {$p(i)$};
+
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      Designed to implement two operations:
+      \begin{itemize}
+        \item Find($x$)
+        \item Union($x$, $y$)
+      \end{itemize}
+    \end{column}
+    \end{columns}
+  \end{frame}
+
+  \begin{frame}{Using a union-find like algorithm to process connected components}
     \begin{figure}
-      \begin{tikzpicture}[shorten >=1pt,->]
+      \begin{tikzpicture}
         \tikzstyle{vertex} = [circle, draw=black]
-        \tikzstyle{legend} = [color=gray, font=\tiny]
 
-        % Nodes
-        \foreach \index / \x in {0/5, 1/6, 2/1, 3/4, 4/0, 5/2}
-          \node[vertex] (\index) at (\x, 5-\index) {$\index$};
+        \node[vertex] (0) at (6, 2) {$0$};
+        \node[vertex] (1) at (3, 1) {$1$};
+        \node[vertex] (2) at (8, 2) {$2$};
+        \node[vertex] (3) at (2, 4) {$3$};
+        \node[vertex] (4) at (8, 4) {$4$};
+        \node[vertex] (5) at (1, 2) {$5$};
+        \node[vertex] (6) at (6, 4) {$6$};
 
-        % Edges
-        \draw[->] (4) -- (2);
-        \draw[->] (5) -- (2);
-        \draw[->] (1) -- (0);
-        \draw[->] (3) -- (0);
+        \only<1>{%
+          \foreach \x / \y in {5/3, 3/1, 6/4, 4/2, 0/4, 1/5, 0/6, 2/0}
+            \draw[-] (\x) -- (\y);
+        }
 
-        % Disjoint set
-        \tikzstyle{value} = [draw=black, fill=blue!15, minimum width=0.5cm, minimum height=0.5cm]
-        \tikzstyle{index} = [color=darkgray, font=\small]
+        \foreach \i / \x / \y in {2/5/3, 3/3/1, 8/6/4, 5/4/2, 7/0/4, 4/1/5, 6/0/6, 9/2/0} {%
+          \only<\i>{\draw[-,dotted] (\x) -- (\y);}
+        }
 
-        \foreach \i / \x in {0/0, 1/0, 2/2, 3/0, 4/2, 5/2} {%
-          \node[index] at (2 + \i / 2, -1) {\i};
-            \node[value] at (2 + \i / 2, -1.5) {\x};
+        \foreach \j / \x / \y in {3/5/3, 4/3/1, 7/0/6, 6/4/2, 8/0/4} {%
+          \onslide<\j->{\draw[-] (\x) -- (\y);} 
         }
 
       \end{tikzpicture}
     \end{figure}
+
+    Connected components:
+    \only<2>{$\{0\},\{1\},\{2\},\{3\},\{4\},\{5\},\{6\}$}
+    \only<3>{$\{3,5\},\{0\},\{1\},\{2\},\{4\},\{6\}$}
+    \only<4,5>{$\{1,3,5\},\{0\},\{2\},\{4\},\{6\}$}
+    \only<6>{$\{1,3,5\},\{2,4\},\{0\},\{6\}$}
+    \only<7>{$\{1,3,5\},\{2,4\},\{0,6\}$}
+    \only<1,8,9>{$\{1,3,5\},\{2,4,0,6\}$}
   \end{frame}
 
   \begin{frame}{Inserting an edge}
+    \begin{thebibliography}{10}
+      Md. Mostofa Ali Patwary and Jean R. S. Blair and F. Manne
+      \newblock \href{http://www.ii.uib.no/~fredrikm/fredrik/papers/SEA2010.pdf}{Experiments on Union-Find Algorithms for the Disjoint-Set Data Structure}
+      \newblock {\em SEA}, 2010.
+    \end{thebibliography}
+
+    \begin{algorithm}[H]
+      \caption{Typical union find algorithm}
+      \begin{algorithmic}
+        \State $E_{spanning} = \emptyset$
+        \For {$(x,y) \in E$}
+          \If {$Find(x) \neq Find(y)$}
+            \State $Union(x, y)$
+            \State $E_{spanning} = E_{spanning} \cup (x,y)$
+          \EndIf
+        \EndFor
+      \end{algorithmic}
+    \end{algorithm}
+  \end{frame}
+
+\section{REM algorithm}
+
+  \begin{frame}{REM}
     \only<1> {$p(5) > p(3)$}
     \onslide<2> {$p(2) > p(3)$}
 
-    \begin{figure}
-      \begin{tikzpicture}[shorten >=1pt,->]
-        \tikzstyle{vertex} = [circle, draw=black]
-        \tikzstyle{legend} = [color=gray, font=\tiny]
+    \vspace{-2em}
+    \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{figure}
+        \begin{tikzpicture}[shorten >=1pt,->]
+          \tikzstyle{vertex} = [circle, draw=black]
+          \tikzstyle{legend} = [color=gray, font=\tiny]
 
-        % Nodes
-        \foreach \index / \x in {0/5, 1/6, 2/1, 3/4, 4/0, 5/2}
-          \node[vertex] (\index) at (\x, 5-\index) {$\index$};
+          % Nodes
+          \foreach \index / \x in {0/5, 1/6, 2/1, 3/4, 4/0, 5/2}
+            \node[vertex] (\index) at (\x, 5-\index) {$\index$};
 
-        % Edges
-        \draw[->] (4) -- (2);
-        \onslide<-2>{%
-          \draw [->] (2.90) arc (2:264:3mm) {} (0);
-        }
-        \onslide<3->{%
-          \draw[green, ->] (2) -- (0);
-        }
+          % Edges
+          \draw[->] (4) -- (2);
+          \onslide<-2>{%
+            \draw [->] (2.90) arc (2:264:3mm) {} (0);
+          }
+          \onslide<3->{%
+            \draw[green, ->] (2) -- (0);
+          }
 
-        \onslide<-1>{%
-          \draw[->] (5) -- (2);
-        }
-        \onslide<2-> {%
-          \draw[green, ->] [in=225, out=120] (5) to (0);
-        }
+          \onslide<-1>{%
+            \draw[->] (5) -- (2);
+          }
+          \onslide<2-> {%
+            \draw[green, ->] [in=225, out=120] (5) to (0);
+          }
 
-        \draw [->] (0.90) arc (0:264:3mm) {} (0);
-        \draw[->] (1) -- (0);
-        \draw[->] (3) -- (0);
+          \draw [->] (0.90) arc (0:264:3mm) {} (0);
+          \draw[->] (1) -- (0);
+          \draw[->] (3) -- (0);
 
-        % Edge to insert
-        \onslide<1>{\draw[dotted, -] (5) -- (3);}
-        \onslide<2>{\draw[dotted, -] (2) -- (3);}
+          % Edge to insert
+          \onslide<1>{\draw[dotted, -] (5) -- (3);}
+          \onslide<2>{\draw[dotted, -] (2) -- (3);}
 
-        % r_x and r_y legend
-        \onslide<1> {%
-          \node[legend, right=0mm of 5] {$r_x$};
-          \node[legend, right=0mm of 3] {$r_y$};
-          \node[legend, right=0mm of 2] {$p(r_x)$};
-          \node[legend, right=0mm of 0] {$p(r_y)$};
-        }
-        \onslide<2> {%
-          \node[legend, right=0mm of 2] {$p(r_x) = r_x$};
-          \node[legend, right=0mm of 3] {$r_y$};
-          \node[legend, right=0mm of 0] {$p(r_y)$};
-        }
-      \end{tikzpicture}
-
-      \caption{Inserting edge $(5, 3)$}
-    \end{figure}
+          % r_x and r_y legend
+          \onslide<1> {%
+            \node[legend, right=0mm of 5] {$r_x$};
+            \node[legend, right=0mm of 3] {$r_y$};
+            \node[legend, right=0mm of 2] {$p(r_x)$};
+            \node[legend, right=0mm of 0] {$p(r_y)$};
+          }
+          \onslide<2> {%
+            \node[legend, right=0mm of 2] {$p(r_x) = r_x$};
+            \node[legend, right=0mm of 3] {$r_y$};
+            \node[legend, right=0mm of 0] {$p(r_y)$};
+          }
+        \end{tikzpicture}
+        \caption{Inserting edge $(5, 3)$}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \resizebox{0.9\textwidth}{!}{
+      \begin{minipage}{1.15\textwidth}
+      \begin{algorithm}[H]
+        \caption{REM algorithm}%
+        \label{alg:rem}
+        \begin{algorithmic}[1]
+          \State $r_x \gets x, r_y \gets y$
+          \While {$p(r_x) \neq p(r_y)$}
+            \If {$p(r_x) > p(r_y)$}
+              \If {$r_x = p(r_x)$}
+                \State $p(r_x) \gets p(r_y)$
+                \State \Return false
+              \EndIf
+              \State $p_{r_x} \gets p(r_x)$
+              \State $p(r_x) \gets p(r_y)$
+              \State $r_x \gets p_{r_x}$
+            \Else
+              \If {$r_y = p(r_y)$}
+                \State $p(r_y) \gets p(r_x)$
+                \State \Return false
+              \EndIf
+              \State $p_{r_y} \gets p(r_y)$
+              \State $p(r_y) \gets p(r_x)$
+              \State $r_y \gets p_{r_y}$
+            \EndIf
+          \EndWhile
+          \State \Return true
+        \end{algorithmic}
+      \end{algorithm}
+      \end{minipage}
+      }
+    \end{column}
+    \end{columns}
   \end{frame}
 
-  \begin{frame}{Inserting an edge}
+  \begin{frame}{REM}
     \only<1> {$p(5) > p(3)$: $r_x \leftarrow p(r_x)$}
     \only<2> {$p(4) < p(3)$: $r_y \leftarrow p(r_y)$}
     \only<3> {$p(4) > p(2)$: $r_x \leftarrow p(r_x)$}
     \onslide<4> {$p(1) > p(2)$: $r_x \leftarrow p(r_x)$}
 
-    \begin{figure}
-      \begin{tikzpicture}[shorten >=1pt,->]
-        \tikzstyle{vertex} = [circle, draw=black]
-        \tikzstyle{legend} = [color=gray, font=\tiny]
+    \vspace{-2em}
 
-        % Nodes
-        \foreach \index / \x in {0/5, 1/0, 2/5, 3/5, 4/0, 5/0}
-          \node[vertex] (\index) at (\x, 5-\index) {$\index$};
+    \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{figure}
+        \begin{tikzpicture}[shorten >=1pt,->]
+          \tikzstyle{vertex} = [circle, draw=black]
+          \tikzstyle{legend} = [color=gray, font=\tiny]
 
-        % Edges
-        \onslide<-4> {%
-          \draw [->] (1.90) arc (1:264:3mm) {} (1);
-        }
-        \onslide<-3> {%
-          \draw[->] (4) -- (1);
-        }
-        \onslide<-1> {%
-          \draw[->] (5) -- (4);
-        }
+          % Nodes
+          \foreach \index / \x in {0/5, 1/0, 2/5, 3/5, 4/0, 5/0}
+            \node[vertex] (\index) at (\x, 5-\index) {$\index$};
 
-        \draw [->] (0.90) arc (0:264:3mm) {} (0);
-        \draw[->] (2) -- (0);
-        \onslide<-2> {%
-          \draw[->] (3) -- (2);
-        }
+          % Edges
+          \onslide<-4> {%
+            \draw [->] (1.90) arc (1:264:3mm) {} (1);
+          }
+          \onslide<-3> {%
+            \draw[->] (4) -- (1);
+          }
+          \onslide<-1> {%
+            \draw[->] (5) -- (4);
+          }
 
-        \onslide<2-> {%
-          \draw[green, ->] (5) -- (2);
-        }
+          \draw [->] (0.90) arc (0:264:3mm) {} (0);
+          \draw[->] (2) -- (0);
+          \onslide<-2> {%
+            \draw[->] (3) -- (2);
+          }
 
-        \onslide<3-> {%
-          \draw[green, ->] (3) -- (1);
-        }
+          \onslide<2-> {%
+            \draw[green, ->] (5) -- (2);
+          }
 
-        \onslide<4-> {%
-          \draw[green, ->] (4) -- (0);
-        }
+          \onslide<3-> {%
+            \draw[green, ->] (3) -- (1);
+          }
 
-        \onslide<5-> {%
-          \draw[green, ->] (1) -- (0);
-        }
+          \onslide<4-> {%
+            \draw[green, ->] (4) -- (0);
+          }
 
-        % Edge to insert
-        \onslide<1>{\draw[dotted, -] (5) -- (3);}
-        \onslide<2>{\draw[dotted, -] (4) -- (3);}
-        \onslide<3>{\draw[dotted, -] (4) -- (2);}
-        \onslide<4>{\draw[dotted, -] (1) -- (2);}
+          \onslide<5-> {%
+            \draw[green, ->] (1) -- (0);
+          }
 
-        % r_x and r_y legend
-        \onslide<1> {%
-          \node[legend, right=0mm of 5] {$r_x$};
-          \node[legend, right=0mm of 4] {$p(r_x)$};
-          \node[legend, right=0mm of 3] {$r_y$};
-          \node[legend, right=0mm of 2] {$p(r_y)$};
-        }
-        \onslide<2> {%
-          \node[legend, right=0mm of 4] {$r_x$};
-          \node[legend, right=0mm of 1] {$p(r_x)$};
-          \node[legend, right=0mm of 3] {$r_y$};
-          \node[legend, right=0mm of 2] {$p(r_y)$};
-        }
-        \onslide<3> {%
-          \node[legend, right=0mm of 4] {$r_x$};
-          \node[legend, right=0mm of 1] {$p(r_x)$};
-          \node[legend, right=0mm of 2] {$r_y$};
-          \node[legend, right=0mm of 0] {$p(r_y)$};
-        }
-        \onslide<4> {%
-          \node[legend, right=0mm of 1] {$p(r_x) = r_x$};
-          \node[legend, right=0mm of 2] {$r_y$};
-          \node[legend, right=0mm of 0] {$p(r_y)$};
-        }
-      \end{tikzpicture}
+          % Edge to insert
+          \onslide<1>{\draw[dotted, -] (5) -- (3);}
+          \onslide<2>{\draw[dotted, -] (4) -- (3);}
+          \onslide<3>{\draw[dotted, -] (4) -- (2);}
+          \onslide<4>{\draw[dotted, -] (1) -- (2);}
 
-      \caption{Inserting edge $(5, 3)$}
-    \end{figure}
+          % r_x and r_y legend
+          \onslide<1> {%
+            \node[legend, right=0mm of 5] {$r_x$};
+            \node[legend, right=0mm of 4] {$p(r_x)$};
+            \node[legend, right=0mm of 3] {$r_y$};
+            \node[legend, right=0mm of 2] {$p(r_y)$};
+          }
+          \onslide<2> {%
+            \node[legend, right=0mm of 4] {$r_x$};
+            \node[legend, right=0mm of 1] {$p(r_x)$};
+            \node[legend, right=0mm of 3] {$r_y$};
+            \node[legend, right=0mm of 2] {$p(r_y)$};
+          }
+          \onslide<3> {%
+            \node[legend, right=0mm of 4] {$r_x$};
+            \node[legend, right=0mm of 1] {$p(r_x)$};
+            \node[legend, right=0mm of 2] {$r_y$};
+            \node[legend, right=0mm of 0] {$p(r_y)$};
+          }
+          \onslide<4> {%
+            \node[legend, right=0mm of 1] {$p(r_x) = r_x$};
+            \node[legend, right=0mm of 2] {$r_y$};
+            \node[legend, right=0mm of 0] {$p(r_y)$};
+          }
+        \end{tikzpicture}
+
+        \caption{Inserting edge $(5, 3)$}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \resizebox{0.9\textwidth}{!}{
+      \begin{minipage}{1.15\textwidth}
+      \begin{algorithm}[H]
+        \caption{REM algorithm}%
+        \label{alg:rem}
+        \begin{algorithmic}[1]
+          \State $r_x \gets x, r_y \gets y$
+          \While {$p(r_x) \neq p(r_y)$}
+            \If {$p(r_x) > p(r_y)$}
+              \If {$r_x = p(r_x)$}
+                \State $p(r_x) \gets p(r_y)$
+                \State \Return false
+              \EndIf
+              \State $p_{r_x} \gets p(r_x)$
+              \State $p(r_x) \gets p(r_y)$
+              \State $r_x \gets p_{r_x}$
+            \Else
+              \If {$r_y = p(r_y)$}
+                \State $p(r_y) \gets p(r_x)$
+                \State \Return false
+              \EndIf
+              \State $p_{r_y} \gets p(r_y)$
+              \State $p(r_y) \gets p(r_x)$
+              \State $r_y \gets p_{r_y}$
+            \EndIf
+          \EndWhile
+          \State \Return true
+        \end{algorithmic}
+      \end{algorithm}
+      \end{minipage}
+      }
+    \end{column}
+    \end{columns}
+
   \end{frame}
 
 \section{Distributed REM algorithm}
@@ -203,9 +400,9 @@
         \tikzstyle{process} = [draw=black, fill=blue!15, minimum width=0.5cm, minimum height=0.6cm]
         \tikzstyle{label} = [color=darkgray, font=\small]
 
-        \node[label] at (-1, 3) {process 1};
-        \node[label] at (-1, 2) {process 2};
-        \node[label] at (-1, 1) {process 3};
+        \node[label] at (-1, 3) {process 0};
+        \node[label] at (-1, 2) {process 1};
+        \node[label] at (-1, 1) {process 2};
 
         \draw[double distance=2pt,->,>=angle 90,thick] (0, 0) -- (8, 0) node [below,pos=0.25] {time};
         %\node[legend, right=0mm of 5] {$r_x$};
@@ -236,9 +433,215 @@
         \draw[->] (22) -- (33);
         \draw[->] (23) -- (31);
         \draw[->] (23) -- (32);
-
       \end{tikzpicture}
     \end{figure}
   \end{frame}
+
+  \begin{frame}{REM adaptation to distributed computing}
+    \setbeamercovered{transparent}
+    \begin{enumerate}
+      \onslide<1,2,3>{\item Attribute nodes and edges to each process}
+      \onslide<1,4>{\item Process spanning trees over subgraph in each process}
+      \onslide<1,5>{\item Remove as many nodes from the border as possible}
+      \onslide<1,6>{\item Merge trees between different process}
+    \end{enumerate}
+    \setbeamercovered{invisible}
+
+    \begin{figure}
+      \begin{tikzpicture}
+        \tikzstyle{vertex} = [circle, draw=black]
+
+        \node[vertex] (0) at (6, 2) {$0$};
+        \node[vertex] (1) at (3, 1) {$1$};
+        \node[vertex] (2) at (8, 2) {$2$};
+        \node[vertex] (3) at (2, 4) {$3$};
+        \node[vertex] (4) at (8, 4) {$4$};
+        \node[vertex] (5) at (1, 2) {$5$};
+        \node[vertex] (6) at (6, 4) {$6$};
+
+        \onslide<2-> {%
+          \draw[dotted,thick,color=orange] (0,0) rectangle (4,5);
+          \draw[dotted,thick,color=blue] (5,0) rectangle (9,5);
+        }
+
+        \only<2-> {%
+          \node[vertex,color=blue,thick] (0) at (6, 2) {$0$};
+          \node[vertex,color=orange,thick] (1) at (3, 1) {$1$};
+          \node[vertex,color=blue,thick] (2) at (8, 2) {$2$};
+          \node[vertex,color=orange,thick] (3) at (2, 4) {$3$};
+          \node[vertex,color=blue,thick] (4) at (8, 4) {$4$};
+          \node[vertex,color=orange,thick] (5) at (1, 2) {$5$};
+          \node[vertex,color=blue,thick] (6) at (6, 4) {$6$};
+        }
+
+        \only<1,2> {%
+          \draw[-] (5) -- (3);
+          \draw[-] (3) -- (1);
+          \draw[-] (6) -- (4);
+          \draw[-] (4) -- (2);
+          \draw[-] (0) -- (4);
+          \draw[-] (1) -- (5);
+          \draw[-] (0) -- (6);
+          \draw[-] (2) -- (0);
+          \draw[-] (3) -- (6);
+          \draw[-] (3) -- (0);
+          \draw[-] (1) -- (0);
+        }
+
+        \only<3-> {%
+          \draw[-,color=orange,thick] (5) -- (3);
+          \draw[-,color=orange,thick] (3) -- (1);
+          \draw[-,color=blue,thick] (6) -- (4);
+          \draw[-,color=blue,thick] (0) -- (4);
+          \only<-3>{\draw[-,color=blue,thick] (4) -- (2);}
+          \only<-3>{\draw[-,color=orange,thick] (1) -- (5);}
+          \only<-3>{\draw[-,color=blue,thick] (0) -- (6);}
+          \draw[-,color=blue,thick] (2) -- (0);
+          \draw[-,color=blue,thick] (3) -- (6);
+          \only<-4>{\draw[-,color=orange,thick] (3) -- (0);}
+          \draw[-,color=orange,thick] (1) -- (0);
+        }
+      \end{tikzpicture}
+    \end{figure}
+
+  \end{frame}
+
+  \begin{frame}{The `tricky' part of the algorithm?}
+    \begin{figure}
+      \begin{algorithm}[H]
+        \caption{Merging trees between process}%
+        \label{alg:rem_distributed}
+        \begin{algorithmic}[1]
+          \Function{handle}{$r_x$, $r_y$, $p$}
+            \State $r_x \gets$ \Call{local-root}{$r_x$, $p$}
+            \State
+            \If {$p(r_x) < r_y$}
+              \State send $(r_y, p(r_x))$ to $owner(r_y)$
+            \ElsIf {$p(r_x) > r_y$}
+              \If {$p(r_x) = r_x$}
+                \State $p(r_x) \gets r_y$
+              \Else
+                \State $p_{r_x} \gets p(r_x)$
+                \State $p(r_x) \gets r_y$
+                \State send $(p_{r_x}, r_y)$ to $owner(p_{r_x})$
+              \EndIf
+            \EndIf
+          \EndFunction
+       \end{algorithmic}
+      \end{algorithm}
+    \end{figure}
+  \end{frame}
+
+  \begin{frame}{Termination and correctness}
+    With notations
+    \begin{itemize}
+      \item \textbf{dset}$_t$ is the disjoint set structure
+      \item \textbf{tasks}$_t$ is the set of pairs $r_x, r_y$ that are being processed
+      \item \textbf{union\_graph}$_t = dset_t \cup tasks_t$ 
+    \end{itemize}
+    We get
+    \begin{itemize}
+      \item $union\_graph_0 = G$
+      \item $\forall t, union\_graph_t \text{ as the same components as } union\_graph_{t+1}$
+      \item The algorithm is stopped when $dset_t = union\_graph_t$
+    \end{itemize}
+  \end{frame}
+
+%  \begin{frame}{Little optimisations}
+%    
+%  \end{frame}
+
+  \begin{frame}{A shared memory algorithm}
+    \begin{thebibliography}{10}
+      P. Refsnes and M. M. Patwary and F. Manne
+      \newblock \href{http://www.ii.uib.no/~fredrikm/fredrik/papers/sm_disjoint.pdf}{Multi-core Spanning Forest Algorithms using the Disjoint-set Data Structure}
+      \newblock {\em 10.1109/IPDPS.2012.79}, 2012.
+    \end{thebibliography}
+
+    \vspace{-0.5em}
+
+    \begin{figure}
+        \centering
+        \begin{minipage}{8cm}
+          \begin{algorithm}[H]
+            \caption{Shared memory REM algorithm}%
+            \label{alg:shared_rem}
+            \begin{algorithmic}[1]
+              \While {$L \neq \emptyset$}
+                \State $U = \emptyset$
+                \For {$x, y \in L$}
+                  \State Execute sequential REM
+                  \If {it merged two components}
+                    \State $U \gets U \cup \{r_y, r_x\}$
+                  \EndIf
+                \EndFor
+                \State Global barrier
+                \State Remove from $U$ pairs that are inside a component
+                \State $L \gets U$
+              \EndWhile
+            \end{algorithmic}
+          \end{algorithm}
+        \end{minipage}
+      \end{figure}
+  \end{frame}
+
+  \begin{frame}{A shared memory algorithm}
+    \begin{tabular}{|l|c|c|}
+      \hline
+      input & sequential rem & shared rem (24 threads) \\
+      \hline
+      web (15G)      & $5s$    & $1s$    \\
+      twitter (10G)  & $20s$   & $1.5s$   \\
+      wikipedia (3G) & $3s$    & $0.25s$ \\
+      \hline
+    \end{tabular}
+  \end{frame}
+
+\section{Results}
+  \begin{frame}{Experimental environment}
+
+    \begin{itemize}
+      \item C, OpenMP, OpenMPI
+      \item 4 $\times$ Intel Xeon E5 2699 v3 (36 physical cores)
+      \item 316 nodes each running 16 physical cores
+    \end{itemize}
+  \end{frame}
+
+  \begin{frame}
+    \begin{figure}
+      \label{graph:cmpinputs}
+      \caption{run on different inputs, using 6 threads per process on a 24 cores computer}
+      \subfloat{
+        \scalebox{0.35}{\input{graphs/web.pgf}}
+      }
+      \subfloat{
+        \scalebox{0.35}{\input{graphs/twitter.pgf}}
+      }
+    \end{figure}
+  \end{frame}
+
+  \begin{frame}
+    \begin{figure}
+      \caption{run on osm's world map, using 32 threads per node}
+      \centering
+      \scalebox{0.55}{\input{graphs/planet32threads.pgf}}
+    \end{figure}
+  \end{frame}
+
+  \begin{frame}
+    \begin{figure}[H]
+      \label{graph:planet_incthreads}
+      \caption{run on osm's world map, increasing number of threads on each 32 cluster nodes}
+      \centering
+      \scalebox{0.55}{\input{graphs/planet_32process.pgf}}
+    \end{figure}
+  \end{frame}
+
+\section*{}
+
+  \begin{frame}{Conclusion}
+
+  \end{frame}
+
 \end{document}
 
